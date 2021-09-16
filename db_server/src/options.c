@@ -1,25 +1,23 @@
-#include "../include/cmdoptions.h"
+#include "../include/options.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 
 
-int handle_options(int argc, char *argv[])
+int handle_options(int argc, char *argv[], int *port, char **logfile)
 {
     int c;
-    int port;
-    char *logfile;
 
     while ((c = getopt (argc, argv, ":p:l:dh")) != -1)
     switch (c)
     {
         case 'p':
-            port = atoi(optarg);
-            printf("port: %d\n", port);
+            *port = atoi(optarg);
+            printf("port: %d\n", *port);
             break;
         case 'l':
-            logfile = optarg;
-            printf("logfile: %s\n", logfile);
+            *logfile = optarg;
+            printf("logfile: %s\n", *logfile);
             break;
         case 'd':
             run_as_daemon();
@@ -54,19 +52,10 @@ where:\n\
     -l  log to the specified logfile (default: logging to syslog)";
     
     printf("%s", help_text);
+    exit(0);
 }
 
 void run_as_daemon()
 {
     printf("Running server as daemon");
-}
-
-void choose_port()
-{
-    
-}
-
-void log_setup()
-{
-
 }
