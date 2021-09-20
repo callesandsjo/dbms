@@ -13,11 +13,7 @@ int main(int argc, char *argv[])
     if (handle_options(argc, argv, &port, &logfile) == -1)
         exit(1);
     
-    if (setup_logging(logfile) == -1);
-        exit(1);
-
-    printf("%d\n",port);
-    printf("%s\n", logfile);
+    db_log(logfile, logfile, LOG_INFO);
 
     int main_socket = create_socket(port);
     
@@ -27,14 +23,12 @@ int main(int argc, char *argv[])
 
     while(1)
     {
-
         client = accept(main_socket, (struct sockaddr *)&client_address, (socklen_t*)&address_length);
         if(client == -1)
             exit(1);
 
         handle_connection(client);
     }
-    
-    
+    close(main_socket);
     return 0;
 }
