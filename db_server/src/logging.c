@@ -8,5 +8,5 @@ int setup_logging(char *logfile){
 
 void db_log(char *logfile, char *message, int prio)  // prio 1: ERROR, 2: WARNING, 3: INFO
 {
-    puts(message);// Will change to file logging
+    return; //will log to file
 }

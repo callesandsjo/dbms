@@ -1,6 +1,7 @@
 #include "../include/network.h"
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
 int create_socket(uint16_t port)
 {
@@ -18,8 +19,8 @@ int create_socket(uint16_t port)
 
     if (listen(_socket, 5) == -1)
         exit(1);
-    
-    printf("socket created");
+
+    printf("Socket created\n");
 
     return _socket;
 }
@@ -28,11 +29,11 @@ int create_socket(uint16_t port)
 void handle_connection(int client)
 {
     char buf[1024];
-    size_t bytes_read;
-    size_t message_size = 0;
-
-    while((bytes_read = read(client, buf + message_size, sizeof(buf)-message_size-1)) != 0)
+    int bytes_read;
+    fflush(stdout);
+    while((bytes_read = read(client, buf, sizeof(buf))) != 0)
     {
-        return;
+        printf("Client message: %s", buf);
+        memset(buf, 0, sizeof(buf));
     }
 }

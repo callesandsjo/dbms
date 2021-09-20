@@ -12,8 +12,6 @@ int main(int argc, char *argv[])
 
     if (handle_options(argc, argv, &port, &logfile) == -1)
         exit(1);
-    
-    db_log(logfile, logfile, LOG_INFO);
 
     int main_socket = create_socket(port);
     
