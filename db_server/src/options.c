@@ -6,38 +6,38 @@
 
 int handle_options(int argc, char *argv[], int *port, char **logfile)
 {
-    int c;
+    int option;
 
-    while ((c = getopt (argc, argv, ":p:l:dh")) != -1)
-    switch (c)
-    {
-        case 'p':
-            *port = atoi(optarg);
-            printf("port: %d\n", *port);
-            break;
-        case 'l':
-            *logfile = optarg;
-            printf("logfile: %s\n", *logfile);
-            break;
-        case 'd':
-            run_as_daemon();
-            break;
-        case 'h':
-            help();
-            break;
-        case ':':
-            fprintf (stderr, "Option -%c requires an argument.\n", optopt);
-            help();
-            return -1;
-        case '?':
-            fprintf (stderr,
-                    "Unknown option\n");
-            help();
-            return -1;
-        default:
-            help();
-            exit(1);
-    }
+    while ((option = getopt (argc, argv, ":p:l:dh")) != -1)
+        switch (option)
+        {
+            case 'p':
+                *port = atoi(optarg);
+                printf("port: %d\n", *port);
+                break;
+            case 'l':
+                *logfile = optarg;
+                printf("logfile: %s\n", *logfile);
+                break;
+            case 'd':
+                run_as_daemon();
+                break;
+            case 'h':
+                help();
+                break;
+            case ':':
+                fprintf (stderr, "Option -%c requires an argument.\n", optopt);
+                help();
+                return -1;
+            case '?':
+                fprintf (stderr,
+                        "Unknown option\n");
+                help();
+                return -1;
+            default:
+                help();
+                exit(1);
+        }
     return 0;
 }
 

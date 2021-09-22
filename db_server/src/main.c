@@ -4,11 +4,15 @@
 #include "../include/logging.h"
 #include <stdlib.h>
 #include <stdio.h>
+#include <pthread.h>
+
+#define TRUE 1
+#define FALSE 0
 
 int main(int argc, char *argv[])
 {
     char *logfile = NULL;
-    int port = 8080;
+    int port = 8080, mux = FALSE;
 
     if (handle_options(argc, argv, &port, &logfile) == -1)
         exit(1);
@@ -19,13 +23,22 @@ int main(int argc, char *argv[])
     struct sockaddr_in client_address;
     int client;
 
-    while(1)
+    if (mux)
     {
-        client = accept(main_socket, (struct sockaddr *)&client_address, (socklen_t*)&address_length);
-        if(client == -1)
-            exit(1);
-
-        handle_connection(client);
+        return 0;
+    }
+    else // thread argument
+    {
+        pthread_t thread;
+        while(1)
+        {
+            // threading
+            client = accept(main_socket, (struct sockaddr *)&client_address, (socklen_t*)&address_length);
+            if(client == -1)
+                exit(1);
+            
+            pthread_create(&thread, NULL, handle_connection, (void *)&client);
+        }
     }
     close(main_socket);
     return 0;

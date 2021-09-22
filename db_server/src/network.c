@@ -26,14 +26,21 @@ int create_socket(uint16_t port)
 }
 
 
-void handle_connection(int client)
+void *handle_connection(void *p_client)
 {
+    // function to handle each clients connection (Gateway)
+    int client = *((int*)p_client);
+
     char buf[1024];
     int bytes_read;
-    fflush(stdout);
+
+    puts("Created thread");
     while((bytes_read = read(client, buf, sizeof(buf))) != 0)
     {
         printf("Client message: %s", buf);
         memset(buf, 0, sizeof(buf));
     }
+    puts("Thread terminated");
+    fflush(stdout);
+    return NULL;
 }

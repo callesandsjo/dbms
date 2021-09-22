@@ -9,6 +9,6 @@
 
 int create_socket(uint16_t port);
 
-void handle_connection(int client);
+void *handle_connection(void *p_client);
 
 #endif
