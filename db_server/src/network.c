@@ -35,8 +35,12 @@ void *handle_connection(void *p_client)
     int bytes_read;
 
     puts("Created thread");
+    const char *start = "$> ";
+    send(client, start, 3, 0);
+
     while((bytes_read = read(client, buf, sizeof(buf))) != 0)
     {
+        
         request_t *req;
         char *error;
         
@@ -44,25 +48,36 @@ void *handle_connection(void *p_client)
         if(req != NULL) {
             
             char type = req->request_type;
+            char *return_str;
 
             printf("type: %d\n", req->request_type);
             printf("table_name: %s\n", req->table_name);
+            print_request(req);
             
             destroy_request(req);
 
-            // print_request(req);
-
-            if(type == 6) // .quit command
+            if (type == 6)
+            {
+                return_str = "Exiting ...\n";
+                send(client, return_str, strlen(return_str), 0);
                 shutdown(client, SHUT_RDWR);
                 close(client);
-                break;
+                break;   
+            }
+            else
+            {
+                return_str = "This command exists but is not implemented yet!\n";
+                send(client, return_str, strlen(return_str), 0);
+            }    
         }
         else {
             printf("%s\n", error);
+            const char *return_str = strcat(error, "\n");
+            send(client, return_str, strlen(return_str), 0);
             free(error);
         }
         memset(buf, 0, sizeof(buf));
-        //printf("Client message: %s", buf);
+        send(client, start, 3, 0);
     }
     puts("Thread terminated");
     fflush(stdout);
