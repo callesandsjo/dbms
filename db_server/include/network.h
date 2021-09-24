@@ -6,6 +6,7 @@
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <unistd.h> 
+#include "../lib/request.h"
 
 int create_socket(uint16_t port);
 

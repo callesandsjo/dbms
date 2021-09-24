@@ -4,11 +4,11 @@ OBJ := objects
 SOURCES := $(wildcard $(SRC)/*.c)
 OBJECTS := $(patsubst $(SRC)/%.c, $(OBJ)/%.o, $(SOURCES))
 
-FLAGS := -pthread
+FLAGS := -pthread -fPIC
 
 
 all: $(OBJECTS)
-	gcc $(FLAGS) $^ -o db_server
+	gcc $(FLAGS) $^ lib/librequest.so -o db_server
 
 $(OBJ)/%.o: $(SRC)/%.c
 	gcc -I$(SRC) -c $< -o $@

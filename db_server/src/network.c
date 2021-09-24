@@ -31,14 +31,38 @@ void *handle_connection(void *p_client)
     // function to handle each clients connection (Gateway)
     int client = *((int*)p_client);
 
-    char buf[1024];
+    char buf[256];
     int bytes_read;
 
     puts("Created thread");
     while((bytes_read = read(client, buf, sizeof(buf))) != 0)
     {
-        printf("Client message: %s", buf);
+        request_t *req;
+        char *error;
+        
+        req = parse_request(buf, &error);
+        if(req != NULL) {
+            
+            char type = req->request_type;
+
+            printf("type: %d\n", req->request_type);
+            printf("table_name: %s\n", req->table_name);
+            
+            destroy_request(req);
+
+            // print_request(req);
+
+            if(type == 6) // .quit command
+                shutdown(client, SHUT_RDWR);
+                close(client);
+                break;
+        }
+        else {
+            printf("%s\n", error);
+            free(error);
+        }
         memset(buf, 0, sizeof(buf));
+        //printf("Client message: %s", buf);
     }
     puts("Thread terminated");
     fflush(stdout);
