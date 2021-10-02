@@ -57,5 +57,6 @@ where:\n\
 
 void run_as_daemon()
 {
+    //behöver signalhandler kanske i filehandler?!?!
     printf("Running server as daemon");
 }

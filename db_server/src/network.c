@@ -1,7 +1,5 @@
 #include "../include/network.h"
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
+
 
 int create_socket(uint16_t port)
 {
@@ -40,46 +38,88 @@ void *handle_connection(void *p_client)
 
     while((bytes_read = read(client, buf, sizeof(buf))) != 0)
     {
-        
-        request_t *req;
+        char rt;
         char *error;
-        
-        req = parse_request(buf, &error);
-        if(req != NULL) {
-            
-            char type = req->request_type;
-            char *return_str;
-
-            printf("type: %d\n", req->request_type);
-            printf("table_name: %s\n", req->table_name);
-            print_request(req);
-            
-            destroy_request(req);
-
-            if (type == 6)
+        if(handle_request(buf,&rt,error,client)) 
+        {
+            if (rt == RT_QUIT)
             {
-                return_str = "Exiting ...\n";
-                send(client, return_str, strlen(return_str), 0);
                 shutdown(client, SHUT_RDWR);
-                close(client);
-                break;   
-            }
-            else
-            {
-                return_str = "This command exists but is not implemented yet!\n";
-                send(client, return_str, strlen(return_str), 0);
+                close(client);   
+                break;
             }    
         }
-        else {
-            printf("%s\n", error);
-            const char *return_str = strcat(error, "\n");
-            send(client, return_str, strlen(return_str), 0);
-            free(error);
-        }
+        //printf("Client message: %s", buf);
         memset(buf, 0, sizeof(buf));
         send(client, start, 3, 0);
     }
     puts("Thread terminated");
     fflush(stdout);
     return NULL;
+}
+
+bool handle_request(char * buf,char* request_type,char*error,int client)
+{
+    bool wasOk = false;
+    request_t *req;
+    req = parse_request(buf,&error);
+    if (req != NULL)
+    {
+        wasOk = true;
+        *request_type = req->request_type;
+        if((int)*request_type == RT_CREATE)
+        {
+            //printf("creating table\n");
+            if (create_table(req))
+            {
+                send(client,"Table created\n",14,0);
+            }
+            else
+            {
+                send(client,"Table already exists\n",21,0); 
+            }
+        }
+        else if((int)*request_type == RT_TABLES)
+        {
+            char tables[1024] = "Current tables:\n";
+            //printf("Searching for tables....\n");
+            list_tables(tables);
+            send(client, tables, strlen(tables),0);
+        }
+        else if ((int)*request_type == RT_SCHEMA)
+        {
+            char schemas[1024];
+            list_schemas(schemas,req->table_name);
+            send(client, schemas,strlen(schemas),0);
+            memset(schemas,0,strlen(schemas));
+        }
+        else if((int)*request_type == RT_DROP)
+        {
+            drop_table(req->table_name);
+        }
+        else if((int)*request_type == RT_INSERT)
+        {
+            insert_record(req);
+        }
+        else if((int)*request_type == RT_SELECT)
+        {
+            char records[1024];
+            select_record(req,records,2);
+            //send(client, records,strlen(records),0);
+        }
+        else if ((int)*request_type != RT_QUIT)
+        {
+            printf("This command exists but is not implemented yet: %d!\n",request_type);
+        }
+        print_request(req); 
+        destroy_request(req);
+    }
+    else
+    {
+        printf("error: %s\n",error);
+        // const char *return_str = strcat(error, "\n");
+        // send(client, return_str, strlen(return_str), 0);
+        // free(error);
+    }
+    return wasOk;
 }
