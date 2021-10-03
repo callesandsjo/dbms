@@ -35,7 +35,7 @@ void *handle_connection(void *p_client)
     puts("Created thread");
     const char *start = "$> ";
     send(client, start, 3, 0);
-
+    handle_log(client,"Connection started",3);
     while((bytes_read = read(client, buf, sizeof(buf))) != 0)
     {
         char rt;
@@ -45,7 +45,8 @@ void *handle_connection(void *p_client)
             if (rt == RT_QUIT)
             {
                 shutdown(client, SHUT_RDWR);
-                close(client);   
+                close(client);
+                handle_log(client,"Connection ended",3);   
                 break;
             }    
         }
@@ -72,7 +73,11 @@ bool handle_request(char * buf,char* request_type,char*error,int client)
             //printf("creating table\n");
             if (create_table(req))
             {
+                char log[256] = "Table:'";
+                strcat(log,req->table_name);
+                strcat(log,"' created");
                 send(client,"Table created\n",14,0);
+                handle_log(client,log,3);
             }
             else
             {
@@ -85,6 +90,7 @@ bool handle_request(char * buf,char* request_type,char*error,int client)
             //printf("Searching for tables....\n");
             list_tables(tables);
             send(client, tables, strlen(tables),0);
+            handle_log(client,"Tables listed",3);
         }
         else if ((int)*request_type == RT_SCHEMA)
         {
@@ -92,14 +98,26 @@ bool handle_request(char * buf,char* request_type,char*error,int client)
             list_schemas(schemas,req->table_name);
             send(client, schemas,strlen(schemas),0);
             memset(schemas,0,strlen(schemas));
+            char log[256] = "Schemas from:'";
+            strcat(log,req->table_name);
+            strcat(log,"' gotten");
+            handle_log(client,log,3);
         }
         else if((int)*request_type == RT_DROP)
         {
             drop_table(req->table_name);
+            char log[256] = "Table:'";
+            strcat(log,req->table_name);
+            strcat(log,"' dropped");
+            handle_log(client,log,3);
         }
         else if((int)*request_type == RT_INSERT)
         {
             insert_record(req);
+            char log[256] = "Record ";
+            strcat(log,"inserted in ");
+            strcat(log,req->table_name);
+            handle_log(client,log,3);
         }
         else if((int)*request_type == RT_SELECT)
         {
@@ -116,10 +134,23 @@ bool handle_request(char * buf,char* request_type,char*error,int client)
     }
     else
     {
-        printf("error: %s\n",error);
+        handle_log(client,error,2);
         // const char *return_str = strcat(error, "\n");
         // send(client, return_str, strlen(return_str), 0);
-        // free(error);
+        free(error);
     }
     return wasOk;
+}
+void handle_log (int client,char * log_msg,int prio)
+{
+    char log[1024]="-";
+    char number[256];
+
+    timestamp(log);
+    sprintf(number," %d : ",client);
+    strcat(log,number);
+    strcat(log,log_msg);
+    strcat(log,"\n");
+
+    db_log(T_LOG_PATH,log,prio);
 }

@@ -55,7 +55,7 @@ void list_schemas(char * schemas,char *table_name) //fungerar konstigt, men bät
 
         char  pattern_for_tables[4096] = "(";
         strcat(pattern_for_tables,table_name);
-        strcat(pattern_for_tables,"\\]\n.+[-A-Za-z\t,\n]*\n)"); // letar efter "('tablename'\]\n.+)"
+        strcat(pattern_for_tables,"\\]\n.+[-A-Za-z\t,\n]*\n)");
         char tables[4096];
 
         read_from_db(TABLE_DB_PATH,tables,'[',';');

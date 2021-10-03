@@ -3,6 +3,7 @@
 #define NETWORK_H
 #include "../lib/request.h"
 #include "../include/tablehandler.h"
+#include "../include/logging.h"
 #include <stdbool.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
@@ -17,4 +18,5 @@ int create_socket(uint16_t port);
 void *handle_connection(void *p_client);
 
 bool handle_request(char * buf,char* request_type,char*error,int client);
+void handle_log (int client,char * log_msg,int prio);
 #endif
