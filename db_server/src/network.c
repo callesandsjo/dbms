@@ -94,7 +94,7 @@ bool handle_request(char * buf,char* request_type,char*error,int client)
         }
         else if ((int)*request_type == RT_SCHEMA)
         {
-            char schemas[1024];
+            char schemas[1024] ="Schemas:\n";
             list_schemas(schemas,req->table_name);
             send(client, schemas,strlen(schemas),0);
             memset(schemas,0,strlen(schemas));
@@ -114,8 +114,7 @@ bool handle_request(char * buf,char* request_type,char*error,int client)
         else if((int)*request_type == RT_INSERT)
         {
             insert_record(req);
-            char log[256] = "Record ";
-            strcat(log,"inserted in ");
+            char log[256] = "Record inserted in ";
             strcat(log,req->table_name);
             handle_log(client,log,3);
         }

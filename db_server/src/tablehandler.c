@@ -45,49 +45,46 @@ void list_tables(char * tables)
     char eo_string = ']';
     read_from_db(TABLE_DB_PATH,tables,so_string,eo_string);
 }
-void list_schemas(char * schemas,char *table_name) //fungerar konstigt, men bättre än innan 
+void list_schemas(char * schemas,char *table_name) //fungerar 
 {
-    // char so_string = '['
-    // char eo_string = ';'
-    // read_from_db(TABLE_DB_PATH,tables,so_string,eo_string);
-        regex_t treg;
-        regmatch_t  match[1];
 
-        char  pattern_for_tables[4096] = "(";
-        strcat(pattern_for_tables,table_name);
-        strcat(pattern_for_tables,"\\]\n.+[-A-Za-z\t,\n]*\n)");
-        char tables[4096];
+    regex_t treg;
+    regmatch_t  match[1];
+    char  pattern_for_tables[256] = "(\\[";
+    strcat(pattern_for_tables,table_name);
+    strcat(pattern_for_tables,"\\][^;]+;)");
+    char tables[10000];
 
-        read_from_db(TABLE_DB_PATH,tables,'[',';');
-        printf("%s\n",tables);
+    read_from_db(TABLE_DB_PATH,tables,'!','*');
+    printf("%s\n",tables);
 
-        regcomp(&treg,pattern_for_tables,REG_EXTENDED|REG_NEWLINE);//sätter pattern
-        if(regexec(&treg,tables, 1, match,1) == 0)//kollar efter table 
-        {
-            read_specific(TABLE_DB_PATH,schemas,match[0].rm_so+strlen(table_name)+4,match[0].rm_eo);
-            //verkar som att offseten beror på antalet tables?
-        }
-        else
-        {
-            printf("No match\n");
-        }
-        regfree(&treg);
+    regcomp(&treg,pattern_for_tables,REG_EXTENDED);//sätter pattern
+    if(regexec(&treg,tables, 1, match,1) == 0)//kollar efter table 
+    {
+        read_specific(TABLE_DB_PATH,schemas,match[0].rm_so+strlen(table_name)+3,match[0].rm_eo-2);
+        //verkar som att offseten beror på antalet tables?
+    }
+    else
+    {
+        printf("No match\n");
+    }
+    regfree(&treg);
 }
-void drop_table(char * table_name)//funkar ej riktigt
+void drop_table(char * table_name)//funkar men kan inte droppa 2 ggr irad/per session.
 {
     if(find_table(table_name))
     {
         regex_t treg;
         regmatch_t  match[1];
-        char  pattern_for_tables[4096] = "(";
+        char  pattern_for_tables[256] = "(\\[";
         strcat(pattern_for_tables,table_name);
-        strcat(pattern_for_tables,"\\]\n.+\n)");
-        char tables[4096];
+        strcat(pattern_for_tables,"\\][^;]+;)");
+        char tables[10000];
 
-        read_from_db(TABLE_DB_PATH,tables,'[',';');
+        read_from_db(TABLE_DB_PATH,tables,'!','*');
         //printf("%s\n",tables);
 
-        regcomp(&treg,pattern_for_tables,REG_EXTENDED|REG_NEWLINE);//sätter pattern
+        regcomp(&treg,pattern_for_tables,REG_EXTENDED);//sätter pattern
 
         if(regexec(&treg,tables, 1, match,1) == 0)//kollar efter table 
         {

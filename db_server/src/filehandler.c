@@ -13,62 +13,27 @@ void write_specific(char * txt,char * path,int start_offset,int end_offset)
     fd = fopen(path,"r+");
     if(fd)
     {
-
         int amount_to_write = end_offset-start_offset;
+
         printf("Start offset: %d\n",start_offset);
         printf("End offset: %d\n",end_offset);
-        char temp_file[4096];
-        int sz = strlen(temp_file);
-        char c;
-        //rewind(fd);
-        while(fgets(temp_file,256,fd))
-        {
-            if(ftell(fd) < (long int)start_offset-1)
-            {
-                fgets(temp_file,start_offset,fd);
-            }
-            else if(ftell(fd) > (long int)end_offset+1)
-            {
-                fgets(temp_file,256,fd);
-            }
-            else
-            {
-                fseek(fd,end_offset+1,SEEK_SET);
-            }
-        }
-        // while(!feof)
+        
+        char temp_file[10000];
+        char new_file[10000];
+        
+        
+        read_from_db(path,temp_file,'!','*');
+        read_specific(path,new_file,0,start_offset);
+        read_specific(path,new_file,end_offset,strlen(temp_file)-1);
+        // for(int i = 0; i<strlen(new_file)-1;i++)
         // {
-        //     c = getc(fd);
-        //     if(sz < start_offset-1)
-        //     {
-        //         c = getc(fd);
-        //         temp_file[sz] = c;
-        //         sz++;
-        //     }
-        //     else if(sz > end_offset)
-        //     {
-        //         c = getc(fd);
-        //         temp_file[sz] = c;
-        //         sz++;
-        //     }
-        //     else if (strlen(txt) == 0)
-        //     {
-        //         sz+=end_offset+1;
-        //     }
-        //     else
-        //     {
-        //         for(int i = 0;i<strlen(txt);i++)
-        //         {
-        //           temp_file[sz] = txt[i];  
-        //           sz++;
-        //         }
-        //     }
+        //     new_file[i] = new_file[i+1];
         // }
-        printf("\nNew file:\n%s",temp_file);
-        //fattar ej vf den inte läser in filen!?!?!?!?
+        printf("\nNew file:\n%s",new_file);
         fclose(fd);
         fd = fopen(path,"w");
-        fputs(temp_file,fd);
+        fputs(new_file,fd);
+        fclose(fd);
     }
 
 }
@@ -78,35 +43,43 @@ void read_from_db(char*path, char* content_to_read, char start_of_string, char e
     fd = fopen(path,"r");
     if(fd)
     {
-        char c  = getc(fd);
-        while(!feof(fd))
+        if(start_of_string != '!' && end_of_string != '*')
         {
-            if(c == start_of_string)
+            char c  = getc(fd);
+            while(!feof(fd))
             {
-                size_t content_sz = strlen(content_to_read);
-                //printf("found start of string\n");
-                c = getc(fd);
-                while( c != end_of_string)
+                if(c == start_of_string)
                 {
-                    content_to_read[content_sz] = c;
-                    content_sz++;
-                    //printf("append:%c\n",c);
+                    //printf("found start of string\n");
+                    size_t content_sz = strlen(content_to_read);
+                    c = getc(fd);
+                    while( c != end_of_string)
+                    {
+                        content_to_read[content_sz] = c;
+                        content_sz++;
+                        //printf("append:%c\n",c);
+                        c = getc(fd);
+                    }
+                    content_to_read[content_sz] = '\n';
+                    //printf("found end of string\n");
+                }
+                else//skip lines
+                {
                     c = getc(fd);
                 }
-                content_to_read[content_sz] = '\n';
-                //printf("found end of string\n");
             }
-            else//skip lines
+        }
+        else //läs hela filen
+        {
+            //printf("Reading whole file....");
+            char c;
+            size_t content_sz = strlen(content_to_read);
+            c = getc(fd);
+            while(!feof(fd))
             {
-                //printf("skipping....\n");
-                while(c != '\n')
-                {
-                    c = getc(fd);
-                    //printf("skip:%c\n",c);
-                }
-            }
-            if(c != start_of_string || c== end_of_string)
-            {
+                content_to_read[content_sz] = c;
+                content_sz++;
+                //printf("append:%c\n",c);
                 c = getc(fd);
             }
         }
@@ -121,19 +94,22 @@ void read_specific(char * path,char * content_to_read,int start_offset,int end_o
 {
     FILE * fd;
     fd = fopen(path,"r");
-    if(fd)
+    if(fd && end_offset > start_offset)
     {
         int amount_to_read = end_offset - start_offset;
         fseek(fd,start_offset,SEEK_SET);
         printf("Start offset: %d",start_offset);
         printf("End offset: %d",end_offset);
         size_t content_sz = strlen(content_to_read);
-        char c;
-        for(int i = 0; i <amount_to_read;i++)
+        char c = fgetc(fd);
+        while(ftell(fd)<=end_offset)
         {
-            c = getc(fd);
-            content_to_read[content_sz] = c;
-            content_sz++;
+            if(c!='\0')
+            {
+                content_to_read[content_sz] = c;
+                content_sz++;
+            }
+            c = fgetc(fd);
         }
         content_to_read[content_sz] = '\n';
     }
