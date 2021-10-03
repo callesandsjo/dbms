@@ -1,0 +1,13 @@
+[test]
+-id	VARCHAR(5),
+-int	INT,
+;
+[testing]
+-id	INT,
+;
+[intetest]
+-id	INT,
+;
+[annan]
+-id	INT,
+;

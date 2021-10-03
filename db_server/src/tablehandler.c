@@ -45,7 +45,7 @@ void list_tables(char * tables)
     char eo_string = ']';
     read_from_db(TABLE_DB_PATH,tables,so_string,eo_string);
 }
-void list_schemas(char * schemas,char *table_name) //fungerar konstigt, läser bara in första schemat
+void list_schemas(char * schemas,char *table_name) //fungerar konstigt, men bättre än innan 
 {
     // char so_string = '['
     // char eo_string = ';'
@@ -55,16 +55,17 @@ void list_schemas(char * schemas,char *table_name) //fungerar konstigt, läser b
 
         char  pattern_for_tables[4096] = "(";
         strcat(pattern_for_tables,table_name);
-        strcat(pattern_for_tables,"\\]\n.+\n)");
+        strcat(pattern_for_tables,"\\]\n.+[-A-Za-z\t,\n]*\n)"); // letar efter "('tablename'\]\n.+)"
         char tables[4096];
 
         read_from_db(TABLE_DB_PATH,tables,'[',';');
-        //printf("%s\n",tables);
+        printf("%s\n",tables);
 
         regcomp(&treg,pattern_for_tables,REG_EXTENDED|REG_NEWLINE);//sätter pattern
         if(regexec(&treg,tables, 1, match,1) == 0)//kollar efter table 
         {
-            read_specific(TABLE_DB_PATH,schemas,match[0].rm_so+strlen(table_name)+2,match[0].rm_eo);
+            read_specific(TABLE_DB_PATH,schemas,match[0].rm_so+strlen(table_name)+4,match[0].rm_eo);
+            //verkar som att offseten beror på antalet tables?
         }
         else
         {
