@@ -15,4 +15,5 @@ void drop_table(char * table_name);
 void insert_record(request_t * req);
 void select_record(request_t * req,char*records,int nr );
 bool find_table(char*table);
+bool spec_check(char * schemas,column_t * variable,int nr_of);
 #endif

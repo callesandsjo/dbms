@@ -9,7 +9,7 @@
 #include <regex.h>
 
 #define TABLE_DB_PATH "../database/tables.txt"
-#define RECORD_DB_PATH "../database/records.txt"
+#define RECORD_DB_PATH "../database/records."
 
 void write_to_db(char * txt,char*path);
 void write_specific(char * txt,char * path,int start_offset,int end_offset);

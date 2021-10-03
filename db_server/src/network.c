@@ -120,9 +120,13 @@ bool handle_request(char * buf,char* request_type,char*error,int client)
         }
         else if((int)*request_type == RT_SELECT)
         {
-            char records[1024];
+            char records[1024] = "Records:\n";
             select_record(req,records,2);
-            //send(client, records,strlen(records),0);
+            send(client, records,strlen(records),0);
+            char log[256] = "Records from ";
+            strcat(log,req->table_name);
+            strcat(log," gotten");
+            handle_log(client,log,3);
         }
         else if ((int)*request_type != RT_QUIT)
         {

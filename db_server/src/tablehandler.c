@@ -47,7 +47,6 @@ void list_tables(char * tables)
 }
 void list_schemas(char * schemas,char *table_name) //fungerar 
 {
-
     regex_t treg;
     regmatch_t  match[1];
     char  pattern_for_tables[256] = "(\\[";
@@ -99,60 +98,78 @@ void drop_table(char * table_name)//funkar men kan inte droppa 2 ggr irad/per se
 }
 void insert_record(request_t * req)
 {
-    print_request(req);
+    //print_request(req);
     if(find_table(req->table_name)) // här behövs list schemas ehehheheeheh
     {
         //behöver checka ifall det finns 'support för values'
-        char to_write[256] ="[";
-        strcat(to_write,req->table_name);
-        strcat(to_write,"](");
+
+        char path[256] = RECORD_DB_PATH;
+        char to_write[256] = ":";
+        char schemas[256]  ="";
+        bool check_ok = false;
+        bool got_int = false;
+        bool got_varchar = false;
+        int nr_of_schemas = 0;
         column_t * temp = req->columns;
-        while(temp)
+        strcat(path,req->table_name);
+        strcat(path,".txt");
+        list_schemas(schemas,req->table_name);
+        if(strstr(schemas,"INT"))
         {
-            if(temp->data_type == DT_INT)
+            got_int = true;
+        }
+        if(strstr(schemas,"VARCHAR"))
+        {
+            got_varchar = true;
+        }
+        for(int i = 0;i<strlen(schemas);i++)
+        {
+            if(schemas[i] == '-')
+            {
+                nr_of_schemas++;
+            }
+        }
+        check_ok = spec_check(schemas,temp,nr_of_schemas);
+        while(temp && check_ok)
+        {
+            strcat(to_write,"(");
+            if(temp->data_type == DT_INT && got_int)
             {
                 char int_to_char = temp->int_val +'0';
-                strcat(to_write,(char*)&int_to_char); // nåt e sus med denna konvertering
+                strcat(to_write,(char*)&int_to_char); // nåt e sus med denna konvertering, funkar dock i create table
+            //börjar ge newline från ingenstans!?!?!?!?
             }
-            else
+            else if(!got_int && got_varchar)
             {
                 strcat(to_write,temp->char_val);
             }
-            strcat(to_write,", ");
             temp = temp->next;
+            if(temp)
+            {
+                strcat(to_write,", ");
+            }
+            else
+            {
+                strcat(to_write,");\n");
+            }
         }
-        strcat(to_write,")\n");
-        write_to_db(to_write,RECORD_DB_PATH);
+
+        if(check_ok)
+        {
+            write_to_db(to_write,path);
+        }
     }
 
 }
-void select_record(request_t * req,char*records,int nr) // funkar ej
+void select_record(request_t * req,char*records,int nr)
 {
     if(find_table(req->table_name))
     {
-        regex_t treg;
-        regmatch_t  match[nr];
-        char record[4096] ="";
-        
-        char  pattern_for_record[4096] = "([A-Za-z]+";
-        strcat(pattern_for_record,req->table_name);
-        strcat(pattern_for_record,"\\].+");
+        char path[256] = RECORD_DB_PATH;
+        strcat(path,req->table_name);
+        strcat(path,".txt");
+        read_from_db(path,records,':',';');
 
-
-        //printf("Reading records\n");
-        read_from_db(RECORD_DB_PATH,record,'[','\n');
-        //printf("Reading records... done\n");
-        printf("%s\n",record);
-
-        regcomp(&treg,pattern_for_record,REG_EXTENDED|REG_NEWLINE);//sätter pattern
-        // if(regexec(&treg,record, nr, match,0) == 0)//kollar efter records 
-        // {
-        //     for(int i = 0;i<nr;i++)
-        //     {
-        //         read_specific(TABLE_DB_PATH,records,match[i].rm_so,match[i].rm_eo);
-        //     }
-        // }
-         regfree(&treg);
     }
 }
 bool find_table(char*table)
@@ -161,6 +178,7 @@ bool find_table(char*table)
     regex_t treg;
     regmatch_t  match;
     char tables[1024];
+
     list_tables(tables);
     regcomp(&treg,table,REG_NOSUB);//sätter pattern
 
@@ -170,4 +188,31 @@ bool find_table(char*table)
     }
     regfree(&treg);
     return table_found;
+}
+bool spec_check(char * schemas,column_t * variable,int nr_of)
+{
+    bool check = false;
+    bool check_int = false;
+    bool check_varchar = false;
+    column_t * temp = variable;
+    int check_nr_of = 0;
+    while(temp)
+    {
+        check_nr_of++;
+        if(temp->data_type == DT_INT && strstr(schemas,"INT"))
+        {
+            check_int = true;
+        }
+        else if(temp->data_type == DT_VARCHAR && strstr(schemas,(char*)(&temp->char_size + '0')))
+        {
+            check_varchar = true;
+        }
+        temp = temp->next;
+    }
+
+    if(check_nr_of == nr_of && (check_int||check_varchar))
+    {
+        check = true;
+    }
+    return check;
 }

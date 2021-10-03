@@ -25,10 +25,7 @@ void write_specific(char * txt,char * path,int start_offset,int end_offset)
         read_from_db(path,temp_file,'!','*');
         read_specific(path,new_file,0,start_offset);
         read_specific(path,new_file,end_offset,strlen(temp_file)-1);
-        // for(int i = 0; i<strlen(new_file)-1;i++)
-        // {
-        //     new_file[i] = new_file[i+1];
-        // }
+        
         printf("\nNew file:\n%s",new_file);
         fclose(fd);
         fd = fopen(path,"w");
