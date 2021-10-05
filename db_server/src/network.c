@@ -86,22 +86,25 @@ bool handle_request(char * buf,char* request_type,char*error,int client)
         }
         else if((int)*request_type == RT_TABLES)
         {
-            char tables[1024] = "Current tables:\n";
+            char * tables = (char*)malloc(1024);
+            strcpy(tables, "Current tables:\n");
             //printf("Searching for tables....\n");
             list_tables(tables);
             send(client, tables, strlen(tables),0);
             handle_log(client,"Tables listed",3);
+            free(tables);
         }
         else if ((int)*request_type == RT_SCHEMA)
         {
-            char schemas[1024] ="Schemas:\n";
+            char * schemas = (char*)malloc(1024);
+            schemas[0] = 0; 
             list_schemas(schemas,req->table_name);
             send(client, schemas,strlen(schemas),0);
-            memset(schemas,0,strlen(schemas));
             char log[256] = "Schemas from:'";
             strcat(log,req->table_name);
             strcat(log,"' gotten");
             handle_log(client,log,3);
+            free(schemas);
         }
         else if((int)*request_type == RT_DROP)
         {

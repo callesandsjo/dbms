@@ -47,53 +47,67 @@ void list_tables(char * tables)
 }
 void list_schemas(char * schemas,char *table_name) //fungerar 
 {
-    regex_t treg;
-    regmatch_t  match[1];
-    char  pattern_for_tables[256] = "(\\[";
-    strcat(pattern_for_tables,table_name);
-    strcat(pattern_for_tables,"\\][^;]+;)");
-    char tables[10000];
-
-    read_from_db(TABLE_DB_PATH,tables,'!','*');
-    printf("%s\n",tables);
-
-    regcomp(&treg,pattern_for_tables,REG_EXTENDED);//sätter pattern
-    if(regexec(&treg,tables, 1, match,1) == 0)//kollar efter table 
-    {
-        read_specific(TABLE_DB_PATH,schemas,match[0].rm_so+strlen(table_name)+3,match[0].rm_eo-2);
-        //verkar som att offseten beror på antalet tables?
-    }
-    else
-    {
-        printf("No match\n");
-    }
-    regfree(&treg);
-}
-void drop_table(char * table_name)//funkar men kan inte droppa 2 ggr irad/per session.
-{
-    if(find_table(table_name))
+    if(find_table(table_name) && get_file_size(TABLE_DB_PATH)>-1)
     {
         regex_t treg;
         regmatch_t  match[1];
-        char  pattern_for_tables[256] = "(\\[";
+        long int file_sz = get_file_size(TABLE_DB_PATH);
+        char *tables = (char*)malloc(file_sz+256);
+        tables[0] = 0;
+        char  * pattern_for_tables = (char*)malloc(256);
+        strcpy(pattern_for_tables,"(\\[");
         strcat(pattern_for_tables,table_name);
-        strcat(pattern_for_tables,"\\][^;]+;)");
-        char tables[10000];
+        strcat(pattern_for_tables,"\\][^;]+;\n)");
 
         read_from_db(TABLE_DB_PATH,tables,'!','*');
-        //printf("%s\n",tables);
+        printf("sz:%d\n File:%s\n",strlen(tables),tables);
+
+        regcomp(&treg,pattern_for_tables,REG_EXTENDED);//sätter pattern
+        if(regexec(&treg,tables, 1, match,1) == 0)//kollar efter table 
+        {
+            read_specific(TABLE_DB_PATH,schemas,match[0].rm_so+strlen(table_name)+3,match[0].rm_eo-3);
+        }
+        else
+        {
+            printf("No match\n");
+        }
+        regfree(&treg);
+        free(tables);
+        free(pattern_for_tables);
+    }
+}
+void drop_table(char * table_name)//funkar men kan inte droppa 2 ggr irad/per session.
+{
+    long int file_sz = get_file_size(TABLE_DB_PATH);
+    if(find_table(table_name) && file_sz>-1)
+    {
+        regex_t treg;
+        regmatch_t  match[1];
+        char *tables = (char*)malloc(file_sz+256);
+        tables[0] = 0;
+        char  * pattern_for_tables = (char*)malloc(256);
+        
+        strcpy(pattern_for_tables,"(\\[");
+        strcat(pattern_for_tables,table_name);
+        strcat(pattern_for_tables,"\\][^;]+;\n)");
+
+        read_from_db(TABLE_DB_PATH,tables,'!','*');
+        printf("%s\n",tables);
 
         regcomp(&treg,pattern_for_tables,REG_EXTENDED);//sätter pattern
 
         if(regexec(&treg,tables, 1, match,1) == 0)//kollar efter table 
         {
             write_specific("",TABLE_DB_PATH,match[0].rm_so,match[0].rm_eo);
+            //memset(tables,0,sizeof(tables));
         }
         else
         {
             printf("Error: Table not found\n");
         }
         regfree(&treg);
+        free(tables);
+        free(pattern_for_tables);
     }
 }
 void insert_record(request_t * req)
@@ -101,9 +115,8 @@ void insert_record(request_t * req)
     //print_request(req);
     if(find_table(req->table_name)) // här behövs list schemas ehehheheeheh
     {
-        //behöver checka ifall det finns 'support för values'
-
-        char path[256] = RECORD_DB_PATH;
+        char * path = (char*)malloc(strlen(RECORD_DB_PATH)+256);
+        strcpy(path,RECORD_DB_PATH);
         char to_write[256] = ":";
         char schemas[256]  ="";
         bool check_ok = false;
@@ -111,6 +124,7 @@ void insert_record(request_t * req)
         bool got_varchar = false;
         int nr_of_schemas = 0;
         column_t * temp = req->columns;
+
         strcat(path,req->table_name);
         strcat(path,".txt");
         list_schemas(schemas,req->table_name);
@@ -137,7 +151,7 @@ void insert_record(request_t * req)
             {
                 char int_to_char = temp->int_val +'0';
                 strcat(to_write,(char*)&int_to_char); // nåt e sus med denna konvertering, funkar dock i create table
-            //börjar ge newline från ingenstans!?!?!?!?
+                //börjar ge newline från ingenstans!?!?!?!?
             }
             else if(!got_int && got_varchar)
             {
@@ -158,6 +172,7 @@ void insert_record(request_t * req)
         {
             write_to_db(to_write,path);
         }
+        free(path);
     }
 
 }
@@ -169,7 +184,6 @@ void select_record(request_t * req,char*records,int nr)
         strcat(path,req->table_name);
         strcat(path,".txt");
         read_from_db(path,records,':',';');
-
     }
 }
 bool find_table(char*table)
@@ -177,16 +191,19 @@ bool find_table(char*table)
     bool table_found = false;
     regex_t treg;
     regmatch_t  match;
-    char tables[1024];
-
+    long int file_sz = get_file_size(TABLE_DB_PATH);
+    char *tables = (char*)malloc(file_sz+256);
+    tables[0] = 0;
     list_tables(tables);
     regcomp(&treg,table,REG_NOSUB);//sätter pattern
 
     if(regexec(&treg,tables, 1, &match,0) == 0)//kollar efter table namnet
     {
         table_found = true;
+        //printf("TABLE FOUND!!!!\n");
     }
     regfree(&treg);
+    free(tables);
     return table_found;
 }
 bool spec_check(char * schemas,column_t * variable,int nr_of)
