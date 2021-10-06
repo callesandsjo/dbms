@@ -37,8 +37,7 @@ void *handle_connection(void *p_client)
 
     puts("Created thread");
     send(test.client, start, 3, 0);
-    handle_log(test,"Connection started",3);
-
+    handle_log(test,"Connection started",3);   
     while((bytes_read = read(test.client, buf, buf_sz)) != 0)
     {
         char rt;
@@ -146,7 +145,7 @@ bool handle_request(char * buf,char* request_type,char*error,struct thread_argum
     }
     else
     {
-        handle_log(args,error,2);
+        handle_log(args,error,1);
         const char *return_str = strcat(error, "\n");
         send(args.client, return_str, strlen(return_str), 0);
         free(error);
@@ -171,5 +170,6 @@ void handle_log (struct thread_arguments client,char * log_msg,int prio)
     strcat(log,log_msg);
     strcat(log,"\n");
 
-    db_log(T_LOG_PATH,log,prio);
+    db_log(client.logfile,log,prio);
+
 }

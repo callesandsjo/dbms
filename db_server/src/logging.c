@@ -7,12 +7,14 @@ int setup_logging(char *logfile){
 
 void db_log(char *logfile, char *message, int prio)  // prio 1: ERROR, 2: WARNING, 3: INFO
 {
-    if(!logfile)
+    if(strlen(logfile) <1 )
     {
-        write_to_db(message,T_LOG_PATH);
+        printf("Logging to syslog\n");
+        syslog(prio,"%s",message);
     }
     else
     {
+        printf("Logging to:'%s'\n",logfile);
         write_to_db(message,logfile);
     }
 }

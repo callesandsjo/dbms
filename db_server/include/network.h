@@ -16,8 +16,9 @@ struct thread_arguments
 {
     int client;
     struct sockaddr_in client_addr;
+    char logfile[256];
+    bool got_log;
 };
-
 
 int create_socket(uint16_t port);
 

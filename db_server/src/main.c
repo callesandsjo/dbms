@@ -31,6 +31,18 @@ int main(int argc, char *argv[])
     {
         pthread_t thread;
         struct thread_arguments args;
+        if(!logfile)
+        {
+            args.logfile[0] = 0;
+        }
+        else
+        {
+            args.logfile[0] = 0;
+            strcat(args.logfile,"../database/");
+            strcat(args.logfile,logfile);
+            strcat(args.logfile,".log.txt");
+            
+        }
         while(1)
         {
             // threading

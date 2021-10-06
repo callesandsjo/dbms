@@ -15,11 +15,21 @@ bool create_table(request_t * req)  //create table
             strcat(to_write, "-");
             if((int)temp->data_type == DT_INT) //lägger in INT typ i tables
             { 
+                if(temp->is_primary_key)
+                {
+                    strcat(to_write,"(P)");
+                    strcat(to_write,"\t");
+                }
                 strcat(to_write, temp->name);
                 strcat(to_write,"\tINT,\n");
             }
-            else    //lägger in VARCHAR typ i tables
+            else if(temp->data_type == DT_VARCHAR)   //lägger in VARCHAR typ i tables
             {
+                if(temp->is_primary_key)
+                {
+                    strcat(to_write,"(P)");
+                    strcat(to_write,"\t");
+                }
                 strcat(to_write, temp->name);
                 strcat(to_write, "\tVARCHAR(");
                 char int_to_char = temp->char_size + '0'; // int +'0' gives the number in ascii table 
@@ -40,12 +50,14 @@ bool create_table(request_t * req)  //create table
     }
     return !exist; // exist = true if it exists => new table not created
 }
+
 void list_tables(char * tables)
 {
     char so_string = '[';
     char eo_string = ']';
     read_from_db(TABLE_DB_PATH,tables,so_string,eo_string);
 }
+
 void list_schemas(char * schemas,char *table_name) //fungerar 
 {
     if(find_table(table_name) && get_file_size(TABLE_DB_PATH)>-1)
@@ -184,7 +196,7 @@ void insert_record(request_t * req)
     }
 
 }
-void select_record(request_t * req,char*records,int nr)
+void select_record(request_t * req, char*records, int nr)
 {
     if(find_table(req->table_name))
     {
