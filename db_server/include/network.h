@@ -12,11 +12,17 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+struct thread_arguments
+{
+    int client;
+    struct sockaddr_in client_addr;
+};
+
 
 int create_socket(uint16_t port);
 
 void *handle_connection(void *p_client);
 
-bool handle_request(char * buf,char* request_type,char*error,int client);
-void handle_log (int client,char * log_msg,int prio);
+bool handle_request(char * buf,char* request_type,char*error,struct thread_arguments args);
+void handle_log (struct thread_arguments client,char * log_msg,int prio);
 #endif

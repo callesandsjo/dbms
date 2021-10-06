@@ -1,6 +1,5 @@
 #include "../include/network.h"
 
-
 int create_socket(uint16_t port)
 {
     int _socket;
@@ -27,39 +26,40 @@ int create_socket(uint16_t port)
 void *handle_connection(void *p_client)
 {
     // function to handle each clients connection (Gateway)
-    int client = *((int*)p_client);
+    //int client = *((int*)p_client);
+    struct thread_arguments test= *(struct thread_arguments*)(p_client);
 
     char buf[256];
     int bytes_read;
 
     puts("Created thread");
     const char *start = "$> ";
-    send(client, start, 3, 0);
-    handle_log(client,"Connection started",3);
-    while((bytes_read = read(client, buf, sizeof(buf))) != 0)
+    send(test.client, start, 3, 0);
+    handle_log(test,"Connection started",3);
+    while((bytes_read = read(test.client, buf, sizeof(buf))) != 0)
     {
         char rt;
         char *error;
-        if(handle_request(buf,&rt,error,client)) 
+        if(handle_request(buf,&rt,error,test)) 
         {
             if (rt == RT_QUIT)
             {
-                shutdown(client, SHUT_RDWR);
-                close(client);
-                handle_log(client,"Connection ended",3);   
+                shutdown(test.client, SHUT_RDWR);
+                close(test.client);
+                handle_log(test,"Connection ended",3);   
                 break;
             }    
         }
         //printf("Client message: %s", buf);
         memset(buf, 0, sizeof(buf));
-        send(client, start, 3, 0);
+        send(test.client, start, 3, 0);
     }
     puts("Thread terminated");
     fflush(stdout);
     return NULL;
 }
 
-bool handle_request(char * buf,char* request_type,char*error,int client)
+bool handle_request(char * buf,char* request_type,char*error,struct thread_arguments args)
 {
     bool wasOk = false;
     request_t *req;
@@ -76,12 +76,12 @@ bool handle_request(char * buf,char* request_type,char*error,int client)
                 char log[256] = "Table:'";
                 strcat(log,req->table_name);
                 strcat(log,"' created");
-                send(client,"Table created\n",14,0);
-                handle_log(client,log,3);
+                send(args.client,"Table created\n",14,0);
+                handle_log(args,log,3);
             }
             else
             {
-                send(client,"Table already exists\n",21,0); 
+                send(args.client,"Table already exists\n",21,0); 
             }
         }
         else if((int)*request_type == RT_TABLES)
@@ -90,20 +90,20 @@ bool handle_request(char * buf,char* request_type,char*error,int client)
             strcpy(tables, "Current tables:\n");
             //printf("Searching for tables....\n");
             list_tables(tables);
-            send(client, tables, strlen(tables),0);
-            handle_log(client,"Tables listed",3);
+            send(args.client, tables, strlen(tables),0);
             free(tables);
+            handle_log(args,"Tables listed",3);
         }
         else if ((int)*request_type == RT_SCHEMA)
         {
             char * schemas = (char*)malloc(1024);
             schemas[0] = 0; 
             list_schemas(schemas,req->table_name);
-            send(client, schemas,strlen(schemas),0);
+            send(args.client, schemas,strlen(schemas),0);
             char log[256] = "Schemas from:'";
             strcat(log,req->table_name);
             strcat(log,"' gotten");
-            handle_log(client,log,3);
+            handle_log(args,log,3);
             free(schemas);
         }
         else if((int)*request_type == RT_DROP)
@@ -112,24 +112,24 @@ bool handle_request(char * buf,char* request_type,char*error,int client)
             char log[256] = "Table:'";
             strcat(log,req->table_name);
             strcat(log,"' dropped");
-            handle_log(client,log,3);
+            handle_log(args,log,3);
         }
         else if((int)*request_type == RT_INSERT)
         {
             insert_record(req);
             char log[256] = "Record inserted in ";
             strcat(log,req->table_name);
-            handle_log(client,log,3);
+            handle_log(args,log,3);
         }
         else if((int)*request_type == RT_SELECT)
         {
             char records[1024] = "Records:\n";
             select_record(req,records,2);
-            send(client, records,strlen(records),0);
+            send(args.client, records,strlen(records),0);
             char log[256] = "Records from ";
             strcat(log,req->table_name);
             strcat(log," gotten");
-            handle_log(client,log,3);
+            handle_log(args,log,3);
         }
         else if ((int)*request_type != RT_QUIT)
         {
@@ -140,21 +140,28 @@ bool handle_request(char * buf,char* request_type,char*error,int client)
     }
     else
     {
-        handle_log(client,error,2);
+        handle_log(args,error,2);
         // const char *return_str = strcat(error, "\n");
         // send(client, return_str, strlen(return_str), 0);
         free(error);
     }
     return wasOk;
 }
-void handle_log (int client,char * log_msg,int prio)
+void handle_log (struct thread_arguments client,char * log_msg,int prio)
 {
-    char log[1024]="-";
-    char number[256];
+    char log[1024];
+    log[0] = 0;
+    char port_number[256];
+    char ip_addr[INET_ADDRSTRLEN];
+    //struct sockaddr_in pin;
+
+    inet_ntop(AF_INET,&client.client_addr.sin_addr,ip_addr,sizeof(ip_addr));
+    sprintf(port_number,"::%i - ",ntohs(client.client_addr.sin_port));
 
     timestamp(log);
-    sprintf(number," %d : ",client);
-    strcat(log,number);
+    strcat(log," ");
+    strcat(log,ip_addr);
+    strcat(log,port_number);
     strcat(log,log_msg);
     strcat(log,"\n");
 

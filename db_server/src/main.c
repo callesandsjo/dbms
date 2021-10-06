@@ -30,14 +30,14 @@ int main(int argc, char *argv[])
     else // thread argument
     {
         pthread_t thread;
+        struct thread_arguments args;
         while(1)
         {
             // threading
-            client = accept(main_socket, (struct sockaddr *)&client_address, (socklen_t*)&address_length);
+            args.client = accept(main_socket, (struct sockaddr *)&args.client_addr, (socklen_t*)&address_length);
             if(client == -1)
                 exit(1);
-            
-            pthread_create(&thread, NULL, handle_connection, (void *)&client);
+            pthread_create(&thread, NULL, handle_connection, (void *)&args);
         }
     }
     close(main_socket);
