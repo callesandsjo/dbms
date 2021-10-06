@@ -28,15 +28,18 @@ void *handle_connection(void *p_client)
     // function to handle each clients connection (Gateway)
     //int client = *((int*)p_client);
     struct thread_arguments test= *(struct thread_arguments*)(p_client);
-
-    char buf[256];
+    int buf_sz = 256;
+    char * buf = (char*)malloc(buf_sz);
+    buf[0] = 0;
+    //char buf[256];
     int bytes_read;
+    const char *start = "$> ";
 
     puts("Created thread");
-    const char *start = "$> ";
     send(test.client, start, 3, 0);
     handle_log(test,"Connection started",3);
-    while((bytes_read = read(test.client, buf, sizeof(buf))) != 0)
+
+    while((bytes_read = read(test.client, buf, buf_sz)) != 0)
     {
         char rt;
         char *error;
@@ -46,12 +49,13 @@ void *handle_connection(void *p_client)
             {
                 shutdown(test.client, SHUT_RDWR);
                 close(test.client);
-                handle_log(test,"Connection ended",3);   
+                handle_log(test,"Connection ended",3);
+                free(buf);   
                 break;
-            }    
+            }
         }
         //printf("Client message: %s", buf);
-        memset(buf, 0, sizeof(buf));
+        memset(buf, 0, buf_sz);
         send(test.client, start, 3, 0);
     }
     puts("Thread terminated");
@@ -91,8 +95,10 @@ bool handle_request(char * buf,char* request_type,char*error,struct thread_argum
             //printf("Searching for tables....\n");
             list_tables(tables);
             send(args.client, tables, strlen(tables),0);
-            free(tables);
             handle_log(args,"Tables listed",3);
+
+            memset(tables,0,1024);
+            free(tables);
         }
         else if ((int)*request_type == RT_SCHEMA)
         {
@@ -141,8 +147,8 @@ bool handle_request(char * buf,char* request_type,char*error,struct thread_argum
     else
     {
         handle_log(args,error,2);
-        // const char *return_str = strcat(error, "\n");
-        // send(client, return_str, strlen(return_str), 0);
+        const char *return_str = strcat(error, "\n");
+        send(args.client, return_str, strlen(return_str), 0);
         free(error);
     }
     return wasOk;

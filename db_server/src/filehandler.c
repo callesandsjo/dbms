@@ -37,8 +37,12 @@ void write_specific(char * txt,char * path,int start_offset,int end_offset)
         printf("\nNew file:\n%s",new_file);
         fd = fopen(path,"w");
         fputs(new_file,fd);
+
         fclose(fd);
+        
+        memset(temp_file,0,strlen(temp_file));
         free(temp_file);
+        memset(new_file,0,strlen(new_file));
         free(new_file);
     }
 
@@ -98,6 +102,11 @@ void read_from_db(char*path, char* content_to_read, char start_of_string, char e
 }
 void read_specific(char * path,char * content_to_read,int start_offset,int end_offset)
 {
+    long int file_sz = get_file_size(path);
+    if(start_offset > file_sz || end_offset > file_sz)
+    {
+        printf("start:%d, end:%d while file:%d\n",start_offset,end_offset,file_sz);
+    }
     FILE * fd;
     fd = fopen(path,"r");
     if(fd && (end_offset > start_offset))

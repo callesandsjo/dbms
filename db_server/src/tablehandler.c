@@ -30,6 +30,7 @@ bool create_table(request_t * req)  //create table
         }
         strcat(to_write,";\n");
         write_to_db(to_write,TABLE_DB_PATH);
+        memset(to_write,0,strlen(to_write));
         /* [ Start of table name
             ] End of table name
             - Start of schema
@@ -55,6 +56,7 @@ void list_schemas(char * schemas,char *table_name) //fungerar
         char *tables = (char*)malloc(file_sz+256);
         tables[0] = 0;
         char  * pattern_for_tables = (char*)malloc(256);
+
         strcpy(pattern_for_tables,"(\\[");
         strcat(pattern_for_tables,table_name);
         strcat(pattern_for_tables,"\\][^;]+;\n)");
@@ -72,7 +74,9 @@ void list_schemas(char * schemas,char *table_name) //fungerar
             printf("No match\n");
         }
         regfree(&treg);
+        memset(tables,0,strlen(tables));
         free(tables);
+        memset(pattern_for_tables,0,256);
         free(pattern_for_tables);
     }
 }
@@ -105,8 +109,11 @@ void drop_table(char * table_name)//funkar men kan inte droppa 2 ggr irad/per se
         {
             printf("Error: Table not found\n");
         }
+
         regfree(&treg);
+        memset(tables,0,strlen(tables)+1);
         free(tables);
+        memset(pattern_for_tables,0,256);
         free(pattern_for_tables);
     }
 }
@@ -128,6 +135,7 @@ void insert_record(request_t * req)
         strcat(path,req->table_name);
         strcat(path,".txt");
         list_schemas(schemas,req->table_name);
+
         if(strstr(schemas,"INT"))
         {
             got_int = true;
@@ -167,12 +175,12 @@ void insert_record(request_t * req)
                 strcat(to_write,");\n");
             }
         }
-
         if(check_ok)
         {
             write_to_db(to_write,path);
         }
         free(path);
+        memset(to_write,0,strlen(to_write));
     }
 
 }
@@ -194,7 +202,9 @@ bool find_table(char*table)
     long int file_sz = get_file_size(TABLE_DB_PATH);
     char *tables = (char*)malloc(file_sz+256);
     tables[0] = 0;
+
     list_tables(tables);
+    printf("Tables:\n%s",tables);
     regcomp(&treg,table,REG_NOSUB);//sätter pattern
 
     if(regexec(&treg,tables, 1, &match,0) == 0)//kollar efter table namnet
@@ -202,7 +212,9 @@ bool find_table(char*table)
         table_found = true;
         //printf("TABLE FOUND!!!!\n");
     }
+
     regfree(&treg);
+    memset(tables,0,strlen(tables));
     free(tables);
     return table_found;
 }
