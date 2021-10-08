@@ -96,7 +96,7 @@ void list_schemas(char * schemas,char *table_name) //fungerar
         pattern_for_tables = NULL;
     }
 }
-void drop_table(char * table_name)//funkar men kan inte droppa 2 ggr irad/per session.
+void drop_table(char * table_name)
 {
     long int file_sz = get_file_size(TABLE_DB_PATH);
     if(find_table(table_name) && file_sz>-1)
@@ -140,7 +140,7 @@ void drop_table(char * table_name)//funkar men kan inte droppa 2 ggr irad/per se
 void insert_record(request_t * req)
 {
     //print_request(req);
-    if(find_table(req->table_name)) // här behövs list schemas ehehheheeheh
+    if(find_table(req->table_name))
     {
         char * path = (char*)malloc(strlen(RECORD_DB_PATH)+256);
         strcpy(path,RECORD_DB_PATH);
@@ -174,23 +174,25 @@ void insert_record(request_t * req)
         check_ok = spec_check(schemas,temp,nr_of_schemas);
         while(temp && check_ok)
         {
-            strcat(to_write,"(");
+            if(strlen(to_write)== 1)
+            {
+                strcat(to_write,"(");
+            }
             if(temp->data_type == DT_INT && got_int)
             {
                 char int_to_string[64];
                 sprintf(int_to_string,"%d",temp->int_val);
-                strcat(to_write,int_to_string); // nåt e sus med denna konvertering, funkar dock i create table
-                //börjar ge newline från ingenstans!?!?!?!?
+                strcat(to_write,int_to_string); 
                 memset(int_to_string,0,64);
             }
-            else if(!got_int && got_varchar)
+            else if(temp->data_type == DT_VARCHAR && got_varchar)
             {
                 strcat(to_write,temp->char_val);
             }
             temp = temp->next;
             if(temp)
             {
-                strcat(to_write,", ");
+                strcat(to_write,",");
             }
             else
             {
@@ -210,12 +212,120 @@ void insert_record(request_t * req)
 }
 void select_record(request_t * req, char*records, int nr)
 {
-    if(find_table(req->table_name))
+    char path[256] = RECORD_DB_PATH;
+    strcat(path,req->table_name);
+    strcat(path,".txt");
+    long int file_sz= get_file_size(path);
+    if(find_table(req->table_name) && file_sz > 0)
     {
-        char path[256] = RECORD_DB_PATH;
-        strcat(path,req->table_name);
-        strcat(path,".txt");
-        read_from_db(path,records,':',';');
+        //if * or specified
+        if(req->columns) //specified
+        {  
+            char* schemas = (char*)malloc(get_file_size(TABLE_DB_PATH));
+            strcpy(schemas,"");
+            size_t nr_of_schemas = 0;
+            column_t * temp = req->columns;
+            //list schemas
+            list_schemas(schemas,req->table_name);
+            //printf("\nSchemas:%s\n",schemas);
+            for(int i = 0;i<strlen(schemas);i++)//räknar antalet schemas
+            {
+                if(schemas[i] == '-')
+                { 
+                    nr_of_schemas++;
+                }
+            }
+            
+            bool schema_nr[nr_of_schemas];
+            for(int i = 0;i<nr_of_schemas;i++) //setting all schemas to false
+            {
+                schema_nr[i] = false; 
+            } 
+
+            while(temp) // bestämmer vilka schemas som skall vara med
+            {
+                size_t char_index = 0;
+                //printf("Schema name selected:%s\n",temp->name);
+                //printf("%d:%c\n",schemas[char_index]);
+                for(int i = 0; i < nr_of_schemas;i++)
+                {
+                    if(char_index <strlen(schemas))
+                    {
+                        char schema_name[256];
+                        strcpy(schema_name,"");
+                        size_t name_sz = 0;
+                        char_index++;   //skipping '-'
+                        while(schemas[char_index] != '\t')//add until schema type
+                        {
+                            schema_name[name_sz] = schemas[char_index];
+                            name_sz++;
+                            char_index++;
+                        }
+                        printf("\nSchema name:%s\n",schema_name);
+                        if(strcmp(temp->name,schema_name) == 0)
+                        {
+                            schema_nr[i] = true; //true = schema is selected
+                            printf("Adding: %s\n",schema_name);
+                        }
+                        while(schemas[char_index] != '-' && char_index < strlen(schemas))//skip to next schema
+                        {
+                            char_index++;
+                        }
+                        memset(schema_name,0,strlen(schema_name));
+                    }
+                }
+                temp = temp->next;
+            }
+            
+            char * temp_records = (char*)malloc(file_sz);
+            strcpy(temp_records,"");
+            read_from_db(path,temp_records,':',';');
+            //printf("temp_records:%s\n",temp_records);
+            size_t records_sz = strlen(records);
+            for(int i = 0;i<strlen(temp_records);i++)
+            {
+                if(temp_records[i] == '(')
+                {
+                    for(int j = 0;j<nr_of_schemas;j++)
+                    {
+                        i++;
+                        if(schema_nr[j])
+                        {
+                            while(temp_records[i] != ',' && temp_records[i] != ')')
+                            {
+                                records[records_sz] = temp_records[i];
+                                records_sz++;
+                                i++;
+                            }
+                            records[records_sz] = '\t';
+                            records_sz++;
+                        }
+                        else
+                        {
+                            while(temp_records[i] != ','  && temp_records[i] != ')')
+                            {
+                                i++;
+                            }
+                        }
+                    }
+                    records[records_sz] = '\n';
+                    records_sz++;
+                }
+            }
+            
+            memset(schemas,0,strlen(schemas));
+            free(schemas);
+            schemas = NULL;
+            
+            memset(temp_records,0,strlen(temp_records));
+            free(temp_records);
+            temp_records = NULL;
+        }
+        else // SELECT *
+        {
+            read_from_db(path,records,':',';');
+        }
+        
         memset(path,0,sizeof(path));
     }
 }
