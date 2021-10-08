@@ -32,9 +32,11 @@ bool create_table(request_t * req)  //create table
                 }
                 strcat(to_write, temp->name);
                 strcat(to_write, "\tVARCHAR(");
-                char int_to_char = temp->char_size + '0'; // int +'0' gives the number in ascii table 
-                strcat(to_write,(char*)(&int_to_char));
+                char int_to_string[64]; 
+                sprintf(int_to_string,"%d",temp->char_size); 
+                strcat(to_write,int_to_string);
                 strcat(to_write,"),\n");
+                memset(int_to_string,0,64);
             }
             temp = temp->next;
         }
@@ -88,8 +90,10 @@ void list_schemas(char * schemas,char *table_name) //fungerar
         regfree(&treg);
         memset(tables,0,strlen(tables));
         free(tables);
+        tables = NULL;
         memset(pattern_for_tables,0,256);
         free(pattern_for_tables);
+        pattern_for_tables = NULL;
     }
 }
 void drop_table(char * table_name)//funkar men kan inte droppa 2 ggr irad/per session.
@@ -100,7 +104,7 @@ void drop_table(char * table_name)//funkar men kan inte droppa 2 ggr irad/per se
         regex_t treg;
         regmatch_t  match[1];
         char *tables = (char*)malloc(file_sz+256);
-        tables[0] = 0;
+        strcpy(tables,"");
         char  * pattern_for_tables = (char*)malloc(256);
         
         strcpy(pattern_for_tables,"(\\[");
@@ -123,10 +127,14 @@ void drop_table(char * table_name)//funkar men kan inte droppa 2 ggr irad/per se
         }
 
         regfree(&treg);
-        memset(tables,0,strlen(tables)+1);
+
+        memset(tables,0,strlen(tables));
         free(tables);
+        tables = NULL;
+
         memset(pattern_for_tables,0,256);
         free(pattern_for_tables);
+        pattern_for_tables = NULL;
     }
 }
 void insert_record(request_t * req)
@@ -169,9 +177,11 @@ void insert_record(request_t * req)
             strcat(to_write,"(");
             if(temp->data_type == DT_INT && got_int)
             {
-                char int_to_char = temp->int_val +'0';
-                strcat(to_write,(char*)&int_to_char); // nåt e sus med denna konvertering, funkar dock i create table
+                char int_to_string[64];
+                sprintf(int_to_string,"%d",temp->int_val);
+                strcat(to_write,int_to_string); // nåt e sus med denna konvertering, funkar dock i create table
                 //börjar ge newline från ingenstans!?!?!?!?
+                memset(int_to_string,0,64);
             }
             else if(!got_int && got_varchar)
             {
@@ -191,8 +201,10 @@ void insert_record(request_t * req)
         {
             write_to_db(to_write,path);
         }
+        memset(path,0,strlen(path));
         free(path);
-        memset(to_write,0,strlen(to_write));
+        path = NULL;
+        memset(to_write,0,sizeof(to_write));
     }
 
 }
@@ -204,6 +216,7 @@ void select_record(request_t * req, char*records, int nr)
         strcat(path,req->table_name);
         strcat(path,".txt");
         read_from_db(path,records,':',';');
+        memset(path,0,sizeof(path));
     }
 }
 bool find_table(char*table)
@@ -216,7 +229,7 @@ bool find_table(char*table)
     tables[0] = 0;
 
     list_tables(tables);
-    printf("Tables:\n%s",tables);
+    //printf("Tables:\n%s",tables);
     regcomp(&treg,table,REG_NOSUB);//sätter pattern
 
     if(regexec(&treg,tables, 1, &match,0) == 0)//kollar efter table namnet
@@ -228,6 +241,7 @@ bool find_table(char*table)
     regfree(&treg);
     memset(tables,0,strlen(tables));
     free(tables);
+    tables = NULL;
     return table_found;
 }
 bool spec_check(char * schemas,column_t * variable,int nr_of)

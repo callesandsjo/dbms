@@ -42,8 +42,10 @@ void write_specific(char * txt,char * path,int start_offset,int end_offset)
         
         memset(temp_file,0,strlen(temp_file));
         free(temp_file);
+        temp_file = NULL;
         memset(new_file,0,strlen(new_file));
         free(new_file);
+        new_file = NULL;
     }
 
 }

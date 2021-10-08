@@ -91,6 +91,7 @@ bool handle_request(char * buf,char* request_type,char*error,struct thread_argum
         {
             char * tables = (char*)malloc(1024);
             strcpy(tables, "Current tables:\n");
+            //tables[0] = 0;
             //printf("Searching for tables....\n");
             list_tables(tables);
             send(args.client, tables, strlen(tables),0);
@@ -98,6 +99,7 @@ bool handle_request(char * buf,char* request_type,char*error,struct thread_argum
 
             memset(tables,0,1024);
             free(tables);
+            tables = NULL;
         }
         else if ((int)*request_type == RT_SCHEMA)
         {
@@ -109,7 +111,10 @@ bool handle_request(char * buf,char* request_type,char*error,struct thread_argum
             strcat(log,req->table_name);
             strcat(log,"' gotten");
             handle_log(args,log,3);
+
+            memset(schemas,0,strlen(schemas));
             free(schemas);
+            schemas = NULL;
         }
         else if((int)*request_type == RT_DROP)
         {
