@@ -15,7 +15,7 @@ $(OBJ)/%.o: $(SRC)/%.c init
 
 init:
 	mkdir -p objects
-	mkdir -p database
+	mkdir -p ../database
 
 clean:
 	rm -rf objects/

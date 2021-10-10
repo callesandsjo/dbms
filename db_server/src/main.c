@@ -21,7 +21,7 @@ int main(int argc, char *argv[])
     if(!logfile)
         printf("Server is up and running.\nPort: %d\nLogging to: Syslog\nRunning as daemon: %d\n", port, is_daemon);
     else
-        printf("Server is up and running.\nPort: %d\nLogging to: %s\nRunning as daemon: %d\n", port, logfile, is_daemon);
+        printf("Server is up and running.\nPort: %d\nLogging to: %s.log.txt\nRunning as daemon: %d\n", port, logfile, is_daemon);
 
     if(is_daemon)
             run_as_daemon();
