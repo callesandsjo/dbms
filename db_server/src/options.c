@@ -2,6 +2,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <sys/stat.h>
+#include <sys/resource.h>
+#include <signal.h>
+#include <sys/time.h>
+#include <fcntl.h>
 
 
 int handle_options(int argc, char *argv[], int *port, char **logfile)
@@ -13,11 +18,9 @@ int handle_options(int argc, char *argv[], int *port, char **logfile)
         {
             case 'p':
                 *port = atoi(optarg);
-                printf("port: %d\n", *port);
                 break;
             case 'l':
                 *logfile = optarg;
-                printf("logfile: %s\n", *logfile);
                 break;
             case 'd':
                 run_as_daemon();
@@ -57,6 +60,44 @@ where:\n\
 
 void run_as_daemon()
 {
-    //behöver signalhandler kanske i filehandler?!?!
-    printf("Running server as daemon");
+    umask(0);
+    int pid;
+    struct rlimit rl;
+    struct sigaction sa;
+
+    if(getrlimit(RLIMIT_NOFILE, &rl))
+    {
+        perror("Error creating daemon");
+        exit(1);
+    }
+    if((pid = fork()) < 0)
+    {
+        perror("Couldnt create daemon");
+        exit(1);
+    }
+    else if(pid != 0)
+    {
+        exit(0);
+    }
+    setsid();
+
+    sigemptyset(&sa.sa_mask);
+    sa.sa_flags = 0;
+
+    if(sigaction(SIGHUP, &sa, NULL) < 0)
+    {
+        perror("Error creating daemon");
+        exit(1);
+    }
+
+    if(rl.rlim_max == RLIM_INFINITY)
+        rl.rlim_max = 1024;
+    
+    for(int i = 0; i < rl.rlim_max; i++)
+        close(i);
+    
+    int fd0 = open("/dev/null", O_RDWR);
+    int fd1 = dup(0);
+    int fd2 = dup(0);
+    
 }
