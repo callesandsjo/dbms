@@ -1,4 +1,0 @@
-[2021-10-10:17:09:20 GMT] 127.0.0.1::42474 - Connection started
-[2021-10-10:17:13:06 GMT] 127.0.0.1::42480 - Connection started
-[2021-10-10:17:13:11 GMT] 127.0.0.1::42480 - syntax error, unexpected STRING
-[2021-10-10:17:13:27 GMT] 127.0.0.1::42480 - syntax error, unexpected STRING
