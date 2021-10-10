@@ -404,10 +404,13 @@ bool find_table(char*table)
     long int file_sz = get_file_size(TABLE_DB_PATH);
     char *tables = (char*)malloc(file_sz+256);
     tables[0] = 0;
+    char pattern[256] = "(";
+    strcat(pattern,table);
+    strcat(pattern,"\n)");
 
     list_tables(tables);
     //printf("Tables:\n%s",tables);
-    regcomp(&treg,table,REG_NOSUB);//sätter pattern
+    regcomp(&treg,pattern,REG_NOSUB);//sätter pattern
 
     if(regexec(&treg,tables, 1, &match,0) == 0)//kollar efter table namnet
     {
@@ -420,7 +423,7 @@ bool find_table(char*table)
     memset(tables,0,strlen(tables));
     free(tables);
     tables = NULL;
-    
+    memset(pattern,0,strlen(pattern));
     return table_found;
 }
 
