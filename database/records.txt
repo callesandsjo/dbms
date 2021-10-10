@@ -1,5 +1,5 @@
 
-[intetest](2ğ, 'hej', 'san', )
+[intetest](2ï¿½, 'hej', 'san', )
 [test](2@, )
 [test]('test', 3, )
-[test](4p, 3 , )
+[test](4p, 3ï¿½, )

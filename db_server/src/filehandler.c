@@ -4,7 +4,22 @@ void write_to_db(char * txt,char* path)
 {
     FILE * fd;
     fd = fopen(path,"a");
+
+    struct flock lock;
+    lock.l_type = F_WRLCK;
+    lock.l_start = 0;
+    lock.l_whence = SEEK_SET;
+    lock.l_len = 0;
+    fcntl(fileno(fd), F_SETLKW, &lock);
+
     fprintf(fd,"%s",txt);
+
+    lock.l_type = F_UNLCK;
+    lock.l_start = 0;
+    lock.l_whence = SEEK_SET;
+    lock.l_len = 0;
+    fcntl(fileno(fd), F_SETLK, &lock);
+
     fclose(fd);
 }
 void write_specific(char * txt,char * path,int start_offset,int end_offset)
@@ -36,7 +51,21 @@ void write_specific(char * txt,char * path,int start_offset,int end_offset)
         
         printf("\nNew file:\n%s",new_file);
         fd = fopen(path,"w");
+        
+        struct flock lock;
+        lock.l_type = F_WRLCK;
+        lock.l_start = 0;
+        lock.l_whence = SEEK_SET;
+        lock.l_len = 0;
+        fcntl(fileno(fd), F_SETLKW, &lock);
+
         fputs(new_file,fd);
+
+        lock.l_type = F_UNLCK;
+        lock.l_start = 0;
+        lock.l_whence = SEEK_SET;
+        lock.l_len = 0;
+        fcntl(fileno(fd), F_SETLK, &lock);
 
         fclose(fd);
         
@@ -55,6 +84,13 @@ void read_from_db(char*path, char* content_to_read, char start_of_string, char e
     fd = fopen(path,"r");
     if(fd)
     {
+        struct flock lock;
+        lock.l_type = F_RDLCK;
+        lock.l_start = 0;
+        lock.l_whence = SEEK_SET;
+        lock.l_len = 0;
+        fcntl(fileno(fd), F_SETLKW, &lock);
+
         if(start_of_string != '!' && end_of_string != '*')
         {
             char c  = getc(fd);
@@ -95,6 +131,13 @@ void read_from_db(char*path, char* content_to_read, char start_of_string, char e
                 c = getc(fd);
             }
         }
+        
+        lock.l_type = F_UNLCK;
+        lock.l_start = 0;
+        lock.l_whence = SEEK_SET;
+        lock.l_len = 0;
+        fcntl(fileno(fd), F_SETLK, &lock);
+
         fclose(fd);
     }
     else
@@ -107,12 +150,19 @@ void read_specific(char * path,char * content_to_read,int start_offset,int end_o
     long int file_sz = get_file_size(path);
     if(start_offset > file_sz || end_offset > file_sz)
     {
-        printf("start:%d, end:%d while file:%d\n",start_offset,end_offset,file_sz);
+        printf("start:%d, end:%d while file:%ld\n",start_offset,end_offset,file_sz);
     }
     FILE * fd;
     fd = fopen(path,"r");
     if(fd && (end_offset > start_offset))
     {
+        struct flock lock;
+        lock.l_type = F_RDLCK;
+        lock.l_start = 0;
+        lock.l_whence = SEEK_SET;
+        lock.l_len = 0;
+        fcntl(fileno(fd), F_SETLKW, &lock);
+
         printf("Start offset: %d",start_offset);
         printf("End offset: %d",end_offset);
         //int amount_to_read = end_offset - start_offset;
@@ -129,6 +179,13 @@ void read_specific(char * path,char * content_to_read,int start_offset,int end_o
             c = fgetc(fd);
         }
         content_to_read[content_sz] = '\n';
+
+        lock.l_type = F_UNLCK;
+        lock.l_start = 0;
+        lock.l_whence = SEEK_SET;
+        lock.l_len = 0;
+        fcntl(fileno(fd), F_SETLK, &lock);
+
         fclose(fd);
     }
     else if(fd)
@@ -197,9 +254,23 @@ long int get_file_size(char*path)
     long int file_sz = -1;
     if(fd)
     {
+        struct flock lock;
+        lock.l_type = F_RDLCK;
+        lock.l_start = 0;
+        lock.l_whence = SEEK_SET;
+        lock.l_len = 0;
+        fcntl(fileno(fd), F_SETLKW, &lock);
+
         fseek(fd,0,SEEK_END);
         file_sz = ftell(fd);
         fseek(fd,0,SEEK_SET);
+
+        lock.l_type = F_UNLCK;
+        lock.l_start = 0;
+        lock.l_whence = SEEK_SET;
+        lock.l_len = 0;
+        fcntl(fileno(fd), F_SETLK, &lock);
+
         fclose(fd);
     }
     return file_sz;

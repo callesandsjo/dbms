@@ -147,7 +147,7 @@ bool handle_request(char * buf,char* request_type,char*error,struct thread_argum
         }
         else if ((int)*request_type != RT_QUIT)
         {
-            printf("This command exists but is not implemented yet: %d!\n",request_type);
+            printf("This command exists but is not implemented yet: %s!\n",request_type);
         }
         print_request(req); 
         destroy_request(req);

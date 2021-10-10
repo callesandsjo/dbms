@@ -7,6 +7,7 @@
 #include <stdbool.h>
 #include <string.h>
 #include <regex.h>
+#include <fcntl.h>
 
 #define TABLE_DB_PATH "../database/tables.txt"
 #define RECORD_DB_PATH "../database/records."
