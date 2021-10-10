@@ -4,12 +4,12 @@ void db_log(char *logfile, char *message, int prio)  // prio 1: ERROR, 2: WARNIN
 {
     if(strlen(logfile) <1 )
     {
-        printf("Logging to syslog\n");
+        //printf("Logging to syslog\n");
         syslog(prio,"%s",message);
     }
     else
     {
-        printf("Logging to:'%s'\n",logfile);
+        //printf("Logging to:'%s'\n",logfile);
         write_to_db(message,logfile);
     }
 }
