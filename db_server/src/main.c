@@ -38,7 +38,6 @@ int main(int argc, char *argv[])
         else
         {
             args.logfile[0] = 0;
-            strcat(args.logfile,"../database/");
             strcat(args.logfile,logfile);
             strcat(args.logfile,".log.txt");
             

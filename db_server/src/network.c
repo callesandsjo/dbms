@@ -22,7 +22,7 @@ int create_socket(uint16_t port)
     if (listen(_socket, 5) == -1)
         exit(1);
 
-    printf("Socket created\n");
+    //printf("Socket created\n");
 
     return _socket;
 }
@@ -67,7 +67,7 @@ void *handle_connection(void *p_client)
         }
         else
         {
-            printf("%d \n", buf[0]);
+            //printf("%d \n", buf[0]);
             if(!(bytes_read == 2 && buf[0] == 13 && !writing))
                 for(int i = 0; i < bytes_read; i++)
                     if (buf[i] == ';')
@@ -134,14 +134,14 @@ bool handle_request(char * buf,char* request_type,char*error,struct thread_argum
             send(args.client, tables, strlen(tables),0);
             handle_log(args,"Tables listed",3);
 
-            memset(tables,0,1024);
+            memset(tables,0,strlen(tables));
             free(tables);
             tables = NULL;
         }
         else if ((int)*request_type == RT_SCHEMA)
         {
             char * schemas = (char*)malloc(1024);
-            schemas[0] = 0; 
+            strcpy(schemas,""); 
             list_schemas(schemas,req->table_name);
             send(args.client, schemas,strlen(schemas),0);
             char log[256] = "Schemas from:'";
@@ -186,7 +186,7 @@ bool handle_request(char * buf,char* request_type,char*error,struct thread_argum
         {
             printf("This command exists but is not implemented yet: %s!\n",request_type);
         }
-        print_request(req); 
+        //print_request(req); 
         destroy_request(req);
     }
     else

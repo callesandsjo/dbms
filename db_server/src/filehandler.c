@@ -37,19 +37,19 @@ void write_specific(char * txt,char * path,int start_offset,int end_offset)
         char *new_file = (char*)malloc(size+256);
         new_file[0]=0;
 
-        printf("Reading to temp_file...\n");
+        //printf("Reading to temp_file...\n");
         read_from_db(path,temp_file,'!','*');
-        printf("Reading to temp_file... done\n");
+        //printf("Reading to temp_file... done\n");
 
-        printf("Reading to new_file... start \n");
+        //printf("Reading to new_file... start \n");
         read_specific(path,new_file,0,start_offset);
-        printf("Reading to new_file...start done\n");
+        //printf("Reading to new_file...start done\n");
         int test = strlen(temp_file);
-        printf("Reading to new_file... end %d\n",test);
+        //printf("Reading to new_file... end %d\n",test);
         read_specific(path,new_file,end_offset,strlen(temp_file));
-        printf("Reading to new_file... end done\n");
+        //printf("Reading to new_file... end done\n");
         
-        printf("\nNew file:\n%s",new_file);
+        //printf("\nNew file:\n%s",new_file);
         fd = fopen(path,"w");
         
         struct flock lock;
@@ -109,6 +109,8 @@ void read_from_db(char*path, char* content_to_read, char start_of_string, char e
                         c = getc(fd);
                     }
                     content_to_read[content_sz] = '\n';
+                    content_sz++;
+                    content_to_read[content_sz] = '\0';
                     //printf("found end of string\n");
                 }
                 else//skip lines
@@ -130,6 +132,7 @@ void read_from_db(char*path, char* content_to_read, char start_of_string, char e
                 //printf("append:%c\n",c);
                 c = getc(fd);
             }
+            content_to_read[content_sz] = '\0';
         }
         
         lock.l_type = F_UNLCK;
@@ -137,12 +140,11 @@ void read_from_db(char*path, char* content_to_read, char start_of_string, char e
         lock.l_whence = SEEK_SET;
         lock.l_len = 0;
         fcntl(fileno(fd), F_SETLK, &lock);
-
         fclose(fd);
     }
     else
     {
-        printf("file not found!\n");
+        //printf("file not found!\n");
     }
 }
 void read_specific(char * path,char * content_to_read,int start_offset,int end_offset)
@@ -150,7 +152,7 @@ void read_specific(char * path,char * content_to_read,int start_offset,int end_o
     long int file_sz = get_file_size(path);
     if(start_offset > file_sz || end_offset > file_sz)
     {
-        printf("start:%d, end:%d while file:%ld\n",start_offset,end_offset,file_sz);
+        //printf("start:%d, end:%d while file:%ld\n",start_offset,end_offset,file_sz);
     }
     FILE * fd;
     fd = fopen(path,"r");
@@ -163,8 +165,8 @@ void read_specific(char * path,char * content_to_read,int start_offset,int end_o
         lock.l_len = 0;
         fcntl(fileno(fd), F_SETLKW, &lock);
 
-        printf("Start offset: %d",start_offset);
-        printf("End offset: %d",end_offset);
+        //printf("Start offset: %d",start_offset);
+        //printf("End offset: %d",end_offset);
         //int amount_to_read = end_offset - start_offset;
         fseek(fd,start_offset,SEEK_SET);
         size_t content_sz = strlen(content_to_read);
@@ -246,6 +248,7 @@ void read_column(char * path ,char*content_to_read,char* delims,bool*columns,int
                 content_sz++;
             }
         }
+        content_to_read[content_sz] = '\0';
     }
     memset(delimiters,0,sizeof(delimiters));
 }

@@ -58,6 +58,7 @@ void list_tables(char * tables)
     char so_string = '[';
     char eo_string = ']';
     read_from_db(TABLE_DB_PATH,tables,so_string,eo_string);
+    //printf("%s\n",tables);
 }
 
 void list_schemas(char * schemas,char *table_name) //fungerar 
@@ -85,7 +86,7 @@ void list_schemas(char * schemas,char *table_name) //fungerar
         }
         else
         {
-            printf("No match\n");
+            //printf("No match\n");
         }
         regfree(&treg);
         memset(tables,0,strlen(tables));
@@ -124,7 +125,7 @@ void drop_table(char * table_name)
         }
         else
         {
-            printf("Error: Table not found\n");
+            //printf("Error: Table not found\n");
         }
 
         regfree(&treg);
@@ -136,6 +137,12 @@ void drop_table(char * table_name)
         memset(pattern_for_tables,0,256);
         free(pattern_for_tables);
         pattern_for_tables = NULL;
+       
+        char record_path[256] = RECORD_DB_PATH;
+        strcat(record_path,table_name);
+        strcat(record_path,".txt");
+        remove(record_path);
+        memset(record_path,0,strlen(record_path));
     }
 }
 
@@ -326,7 +333,7 @@ void delete_record(request_t * req)//lite iffy
         char * records = (char*)malloc(file_sz);
         strcpy(records,"");
         select_record(req,records);
-        printf("Records: %s\n",records);
+        //printf("Records: %s\n",records);
         for(int i = 0;i<strlen(records);i++) // kolla vilket radnummer som skall bort
         {
             if(records[i] == '\n')
@@ -409,9 +416,11 @@ bool find_table(char*table)
     }
 
     regfree(&treg);
+    
     memset(tables,0,strlen(tables));
     free(tables);
     tables = NULL;
+    
     return table_found;
 }
 
