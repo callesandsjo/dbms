@@ -29,11 +29,16 @@ void *handle_connection(void *p_client)
     //int client = *((int*)p_client);
     struct thread_arguments test= *(struct thread_arguments*)(p_client);
     int buf_sz = 256;
-    char * buf = (char*)malloc(buf_sz);
+    char buf[256];
     buf[0] = 0;
     //char buf[256];
     int bytes_read;
     const char *start = "$> ";
+    const char *continuation = "--> ";
+
+    char parse_buf[256];
+    int parse_buf_size = 0;
+    char writing = 0;
 
     puts("Created thread");
     send(test.client, start, 3, 0);
@@ -42,20 +47,47 @@ void *handle_connection(void *p_client)
     {
         char rt;
         char *error;
-        if(handle_request(buf,&rt,error,test)) 
+        if(!parse_buf_size && buf[0] == '.')
         {
-            if (rt == RT_QUIT)
+            if(handle_request(buf, &rt, error, test))
             {
-                shutdown(test.client, SHUT_RDWR);
-                close(test.client);
-                handle_log(test,"Connection ended",3);
-                free(buf);   
-                break;
+                if (rt == RT_QUIT)
+                {
+                    shutdown(test.client, SHUT_RDWR);
+                    close(test.client);
+                    handle_log(test,"Connection ended",3);  
+                    break;
+                }  
             }
         }
-        //printf("Client message: %s", buf);
-        memset(buf, 0, buf_sz);
-        send(test.client, start, 3, 0);
+        else
+        {
+            printf("%d \n", buf[0]);
+            if(!(bytes_read == 2 && buf[0] == 13 && !writing))
+                for(int i = 0; i < bytes_read; i++)
+                    if (buf[i] == ';')
+                    {
+                        parse_buf[parse_buf_size] = buf[i];
+                        
+                        handle_request(parse_buf, &rt, error, test);
+                        
+                        parse_buf_size = 0;
+                        memset(parse_buf, 0, sizeof(parse_buf));
+                        writing = 0;
+                        break;
+                    } 
+                    else
+                    {
+                        writing = 1;
+                        parse_buf[parse_buf_size] = buf[i];
+                        parse_buf_size += 1;
+                    }
+        }
+        if(writing)
+            send(test.client, continuation, 4, 0);
+        else
+            send(test.client, start, 3, 0);
+        memset(buf, 0, sizeof(buf));
     }
     puts("Thread terminated");
     fflush(stdout);
