@@ -65,6 +65,7 @@ void list_schemas(char * schemas,char *table_name) //fungerar
 {
     if(find_table(table_name) && get_file_size(TABLE_DB_PATH)>-1)
     {
+        //printf("list_schemas:%s\n",table_name);
         regex_t treg;
         regmatch_t  match[1];
         long int file_sz = get_file_size(TABLE_DB_PATH);
@@ -80,7 +81,7 @@ void list_schemas(char * schemas,char *table_name) //fungerar
         //printf("sz:%d\n File:%s\n",strlen(tables),tables);
 
         regcomp(&treg,pattern_for_tables,REG_EXTENDED);//sätter pattern
-        if(regexec(&treg,tables, 1, match,1) == 0)//kollar efter table 
+        if(regexec(&treg,tables, 1, match,0) == 0)//kollar efter table 
         {
             read_specific(TABLE_DB_PATH,schemas,match[0].rm_so+strlen(table_name)+3,match[0].rm_eo-3);
         }
@@ -103,6 +104,7 @@ void drop_table(char * table_name)
     long int file_sz = get_file_size(TABLE_DB_PATH);
     if(find_table(table_name) && file_sz>-1)
     {
+        //printf("drop_table:%s\n",table_name);
         regex_t treg;
         regmatch_t  match[1];
         char *tables = (char*)malloc(file_sz+256);
@@ -118,7 +120,7 @@ void drop_table(char * table_name)
 
         regcomp(&treg,pattern_for_tables,REG_EXTENDED);//sätter pattern
 
-        if(regexec(&treg,tables, 1, match,1) == 0)//kollar efter table 
+        if(regexec(&treg,tables, 1, match,0) == 0)//kollar efter table 
         {
             write_specific("",TABLE_DB_PATH,match[0].rm_so,match[0].rm_eo);
             //memset(tables,0,sizeof(tables));
@@ -400,19 +402,21 @@ bool find_table(char*table)
 {
     bool table_found = false;
     regex_t treg;
-    regmatch_t  match;
+    regmatch_t  match[1];
     long int file_sz = get_file_size(TABLE_DB_PATH);
     char *tables = (char*)malloc(file_sz+256);
     tables[0] = 0;
-    char pattern[256] = "(";
+
+    char * pattern = (char*)malloc(256);
+    strcpy(pattern,"(\\b");
     strcat(pattern,table);
-    strcat(pattern,"\n)");
+    strcat(pattern,"\\b)");
 
     list_tables(tables);
-    //printf("Tables:\n%s",tables);
-    regcomp(&treg,pattern,REG_NOSUB);//sätter pattern
+    //printf("find_table:%s:\n",table);
+    regcomp(&treg,pattern,REG_EXTENDED);//sätter pattern
 
-    if(regexec(&treg,tables, 1, &match,0) == 0)//kollar efter table namnet
+    if(regexec(&treg,tables, 1, match,0) == 0)//kollar efter table namnet
     {
         table_found = true;
         //printf("TABLE FOUND!!!!\n");
@@ -423,7 +427,9 @@ bool find_table(char*table)
     memset(tables,0,strlen(tables));
     free(tables);
     tables = NULL;
-    memset(pattern,0,strlen(pattern));
+    memset(pattern,0,sizeof(pattern));
+    free(pattern);
+    pattern = NULL;
     return table_found;
 }
 
