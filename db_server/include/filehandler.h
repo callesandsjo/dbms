@@ -15,6 +15,7 @@ void write_to_db(char * txt,char*path);
 void write_specific(char * txt,char * path,int start_offset,int end_offset);
 void read_from_db(char*path,char* content_to_read, char start_of_string,char end_of_string);
 void read_specific(char * path,char * content_to_read,int start_offset,int end_offset);
+void read_column(char * path ,char*content_to_read,char*delims,bool*columns,int nr_of_columns,char mode);
 bool find_table(char*table);
 long int get_file_size(char*path);
 

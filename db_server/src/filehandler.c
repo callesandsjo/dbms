@@ -136,7 +136,60 @@ void read_specific(char * path,char * content_to_read,int start_offset,int end_o
         fclose(fd);
     }
 }
+void read_column(char * path ,char*content_to_read,char* delims,bool*columns,int nr_of_columns,char mode)
+{
+    char delimiters[256] = "\t\n ";
+    strcat(delimiters,delims); 
+    if(mode == 'F'||mode =='f') // path==a path -> read from file
+    {
+        FILE * fd;
+        fd = fopen(path,"r");
+        if(fd)
+        {
+            fclose(fd);
+        }
 
+    }
+    else if(mode == 'A'|| mode =='a')//path == array
+    {
+        size_t content_sz = strlen(content_to_read);
+        int path_sz = strlen(path);
+        for(int i = 0;i<path_sz;i++)
+        {
+            if(!strchr(delimiters,path[i]))
+            {
+                for(int j = 0; j<nr_of_columns;j++)
+                {
+                    if(columns[j]) // add column
+                    {
+                        //i++;
+                        while(!strchr(delimiters,path[i]))//adding value
+                        {
+                            
+                            content_to_read[content_sz] = path[i];
+                            content_sz++;
+                            i++;
+                        }
+                        content_to_read[content_sz] = '\t';
+                        content_sz++;
+                        i++;//skip delimiter
+                    }
+                    else //skip column
+                    {
+                        while(!strchr(delimiters,path[i]))
+                        {
+                            i++;
+                        }
+                        i++;//skip delimiter
+                    }
+                }
+                content_to_read[content_sz] = '\n';
+                content_sz++;
+            }
+        }
+    }
+    memset(delimiters,0,sizeof(delimiters));
+}
 long int get_file_size(char*path)
 {
     FILE *fd;

@@ -76,7 +76,7 @@ void list_schemas(char * schemas,char *table_name) //fungerar
         strcat(pattern_for_tables,"\\][^;]+;\n)");
 
         read_from_db(TABLE_DB_PATH,tables,'!','*');
-        printf("sz:%d\n File:%s\n",strlen(tables),tables);
+        //printf("sz:%d\n File:%s\n",strlen(tables),tables);
 
         regcomp(&treg,pattern_for_tables,REG_EXTENDED);//sätter pattern
         if(regexec(&treg,tables, 1, match,1) == 0)//kollar efter table 
@@ -96,6 +96,7 @@ void list_schemas(char * schemas,char *table_name) //fungerar
         pattern_for_tables = NULL;
     }
 }
+
 void drop_table(char * table_name)
 {
     long int file_sz = get_file_size(TABLE_DB_PATH);
@@ -112,7 +113,7 @@ void drop_table(char * table_name)
         strcat(pattern_for_tables,"\\][^;]+;\n)");
 
         read_from_db(TABLE_DB_PATH,tables,'!','*');
-        printf("%s\n",tables);
+        //printf("%s\n",tables);
 
         regcomp(&treg,pattern_for_tables,REG_EXTENDED);//sätter pattern
 
@@ -137,6 +138,7 @@ void drop_table(char * table_name)
         pattern_for_tables = NULL;
     }
 }
+
 void insert_record(request_t * req)
 {
     //print_request(req);
@@ -210,7 +212,8 @@ void insert_record(request_t * req)
     }
 
 }
-void select_record(request_t * req, char*records, int nr)
+
+void select_record(request_t * req, char*records)
 {
     char path[256] = RECORD_DB_PATH;
     strcat(path,req->table_name);
@@ -219,16 +222,24 @@ void select_record(request_t * req, char*records, int nr)
     if(find_table(req->table_name) && file_sz > 0)
     {
         //if * or specified
-        if(req->columns) //specified
+        if(req->columns || req->where) //specified
         {  
             char* schemas = (char*)malloc(get_file_size(TABLE_DB_PATH));
             strcpy(schemas,"");
             size_t nr_of_schemas = 0;
-            column_t * temp = req->columns;
+            column_t * temp;
+            if(req->where)
+            {
+                temp = req->where;
+            }
+            else
+            {
+                temp = req->columns;
+            }
             //list schemas
             list_schemas(schemas,req->table_name);
             //printf("\nSchemas:%s\n",schemas);
-            for(int i = 0;i<strlen(schemas);i++)//räknar antalet schemas
+            for(int i = 0;i< strlen(schemas);i++)//räknar antalet schemas
             {
                 if(schemas[i] == '-')
                 { 
@@ -261,11 +272,11 @@ void select_record(request_t * req, char*records, int nr)
                             name_sz++;
                             char_index++;
                         }
-                        printf("\nSchema name:%s\n",schema_name);
+                        //printf("\nSchema name:%s\n",schema_name);
                         if(strcmp(temp->name,schema_name) == 0)
                         {
                             schema_nr[i] = true; //true = schema is selected
-                            printf("Adding: %s\n",schema_name);
+                            //printf("Adding: %s\n",schema_name);
                         }
                         while(schemas[char_index] != '-' && char_index < strlen(schemas))//skip to next schema
                         {
@@ -280,43 +291,12 @@ void select_record(request_t * req, char*records, int nr)
             char * temp_records = (char*)malloc(file_sz);
             strcpy(temp_records,"");
             read_from_db(path,temp_records,':',';');
-            //printf("temp_records:%s\n",temp_records);
-            size_t records_sz = strlen(records);
-            for(int i = 0;i<strlen(temp_records);i++)
-            {
-                if(temp_records[i] == '(')
-                {
-                    for(int j = 0;j<nr_of_schemas;j++)
-                    {
-                        i++;
-                        if(schema_nr[j])
-                        {
-                            while(temp_records[i] != ',' && temp_records[i] != ')')
-                            {
-                                records[records_sz] = temp_records[i];
-                                records_sz++;
-                                i++;
-                            }
-                            records[records_sz] = '\t';
-                            records_sz++;
-                        }
-                        else
-                        {
-                            while(temp_records[i] != ','  && temp_records[i] != ')')
-                            {
-                                i++;
-                            }
-                        }
-                    }
-                    records[records_sz] = '\n';
-                    records_sz++;
-                }
-            }
+            read_column(temp_records,records,"(),",schema_nr,nr_of_schemas,'a');
             
             memset(schemas,0,strlen(schemas));
             free(schemas);
             schemas = NULL;
-            
+
             memset(temp_records,0,strlen(temp_records));
             free(temp_records);
             temp_records = NULL;
@@ -329,6 +309,86 @@ void select_record(request_t * req, char*records, int nr)
         memset(path,0,sizeof(path));
     }
 }
+
+void delete_record(request_t * req)//lite iffy
+{
+    char path[256] = RECORD_DB_PATH;
+    strcat(path,req->table_name);
+    strcat(path,".txt");
+    long int file_sz = get_file_size(path);
+    int start_offset = 0;
+    int end_offset = 0;
+    if(file_sz > 0)
+    {
+        size_t row_nr = 0;
+        size_t row_to_remove = -1;
+        column_t * temp = req->where;
+        char * records = (char*)malloc(file_sz);
+        strcpy(records,"");
+        select_record(req,records);
+        printf("Records: %s\n",records);
+        for(int i = 0;i<strlen(records);i++) // kolla vilket radnummer som skall bort
+        {
+            if(records[i] == '\n')
+            {
+                row_nr++;
+            }
+            else
+            {
+                char temp_var[256];
+                int var_sz = 0;
+                char  number[256];
+                sprintf(number,"%d",temp->int_val);
+                while(records[i] != '\n' && i<strlen(records)&& row_to_remove == -1)
+                {
+                    temp_var[var_sz] = records[i];
+                    i++;
+                    var_sz++;
+                }
+                if(strstr(temp_var,number))
+                {
+                    row_to_remove = row_nr;
+                }
+                memset(temp_var,0,strlen(temp_var));
+                memset(number,0,strlen(number));
+            }
+        }
+
+        row_nr = 0;
+        char * file = (char*)malloc(file_sz);
+        strcpy(file,"");
+        read_from_db(path,file,'!','*');
+        int file_len = strlen(file);
+
+        for(int i = 0;i<file_len;i++)
+        {
+            if(row_nr == row_to_remove)
+            {
+                start_offset = i;
+                while(file[i] != '\n')
+                {
+                    i++;
+                }
+                end_offset = i;
+                row_nr++;
+            }
+            else if(file[i] == '\n')
+            {
+                row_nr++;
+            }
+        }
+        write_specific("",path,start_offset,end_offset+1);
+
+        memset(records,0,strlen(records));
+        free(records);
+        records = NULL;
+
+        memset(file,0,strlen(file));
+        free(file);
+        file=NULL;
+    }
+}
+
 bool find_table(char*table)
 {
     bool table_found = false;
@@ -354,6 +414,7 @@ bool find_table(char*table)
     tables = NULL;
     return table_found;
 }
+
 bool spec_check(char * schemas,column_t * variable,int nr_of)
 {
     bool check = false;

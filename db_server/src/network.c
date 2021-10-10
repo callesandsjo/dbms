@@ -134,12 +134,16 @@ bool handle_request(char * buf,char* request_type,char*error,struct thread_argum
         else if((int)*request_type == RT_SELECT)
         {
             char records[1024] = "Records:\n";
-            select_record(req,records,2);
+            select_record(req,records);
             send(args.client, records,strlen(records),0);
             char log[256] = "Records from ";
             strcat(log,req->table_name);
             strcat(log," gotten");
             handle_log(args,log,3);
+        }
+        else if((int)*request_type == RT_DELETE)
+        {
+            delete_record(req);
         }
         else if ((int)*request_type != RT_QUIT)
         {
