@@ -1,5 +1,0 @@
-
-[intetest](2�, 'hej', 'san', )
-[test](2@, )
-[test]('test', 3, )
-[test](4p, 3�, )

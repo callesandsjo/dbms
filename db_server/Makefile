@@ -10,9 +10,13 @@ FLAGS := -pthread -fPIC
 all: $(OBJECTS)
 	gcc $(FLAGS) $^ lib/librequest.so -o db_server
 
-$(OBJ)/%.o: $(SRC)/%.c
+$(OBJ)/%.o: $(SRC)/%.c init
 	gcc -I$(SRC) -c $< -o $@
 
+init:
+	mkdir -p objects
+	mkdir -p database
+
 clean:
-	rm -f objects/*
+	rm -rf objects/
 	rm -f db_server

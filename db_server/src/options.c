@@ -9,7 +9,7 @@
 #include <fcntl.h>
 
 
-int handle_options(int argc, char *argv[], int *port, char **logfile)
+int handle_options(int argc, char *argv[], int *port, char **logfile, char *is_daemon)
 {
     int option;
 
@@ -23,7 +23,7 @@ int handle_options(int argc, char *argv[], int *port, char **logfile)
                 *logfile = optarg;
                 break;
             case 'd':
-                run_as_daemon();
+                *is_daemon = 1;
                 break;
             case 'h':
                 help();

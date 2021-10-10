@@ -13,11 +13,22 @@ int main(int argc, char *argv[])
 {
     char *logfile = NULL;
     int port = 8080, mux = FALSE;
+    char is_daemon = 0;
 
-    if (handle_options(argc, argv, &port, &logfile) == -1)
+    if (handle_options(argc, argv, &port, &logfile, &is_daemon) == -1)
         exit(1);
 
+    if(!logfile)
+        printf("Server is up and running.\nPort: %d\nLogging to: Syslog\nRunning as daemon: %d\n", port, is_daemon);
+    else
+        printf("Server is up and running.\nPort: %d\nLogging to: %s\nRunning as daemon: %d\n", port, logfile, is_daemon);
+
+    if(is_daemon)
+            run_as_daemon();
+
     int main_socket = create_socket(port);
+
+    
     
     int address_length = sizeof(struct sockaddr_in); 
     struct sockaddr_in client_address;
@@ -42,6 +53,9 @@ int main(int argc, char *argv[])
             strcat(args.logfile,".log.txt");
             
         }
+
+        
+
         while(1)
         {
             // threading
