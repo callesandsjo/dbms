@@ -179,6 +179,8 @@ void read_specific(char * path,char * content_to_read,int start_offset,int end_o
             c = fgetc(fd);
         }
         content_to_read[content_sz] = '\n';
+        content_sz++;
+        content_to_read[content_sz] = '\0';
 
         lock.l_type = F_UNLCK;
         lock.l_start = 0;
