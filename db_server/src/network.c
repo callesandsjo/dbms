@@ -10,6 +10,11 @@ int create_socket(uint16_t port)
     server_address.sin_addr.s_addr = INADDR_ANY;
 	server_address.sin_family = AF_INET;
 	server_address.sin_port = htons(port);
+    if(geteuid() != 0 && port < 1024)
+    {
+        puts("Program needs to run as root to bind to that port");
+        exit(1);
+    }
 
     if (bind(_socket, (struct sockaddr *)&server_address, sizeof(server_address)) == -1)
         exit(1);
